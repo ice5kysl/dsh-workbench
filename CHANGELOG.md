@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.15.1 - 2026-09-07
+
+### Fixes
+
+- Keep file-preview and review-diff state mounted across panel switches, preserving scroll position and avoiding the visible remount flash.
+- Keep review files in the same directory-first order as the review tree, including incremental updates.
+- Restore predictable review collapse and expand controls, and make read-file previews expose editing and refresh actions.
+- Improve CodeMirror preview contrast and One Light / One Dark syntax highlighting; keep diff line-number gutters opaque so code never draws beneath them.
+- Refine the drawer, tabs, search, and tree interaction details while leaving browser-global keyboard shortcuts unclaimed.
+
+### Compatibility
+
+- Add a packaged-plugin DSH mount smoke-test variant for the current prerelease channel in weekly CI.
+
 ## 0.15.0 - 2026-09-07
 
 ### Features
