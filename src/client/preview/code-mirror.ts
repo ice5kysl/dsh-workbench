@@ -50,7 +50,7 @@ const workbenchTheme = EditorView.theme({
     lineHeight: "22px",
   },
   ".cm-gutters": {
-    backgroundColor: "transparent",
+    backgroundColor: "var(--dsw-alias-markdown-code-block)",
     border: "none",
     color: "var(--dsw-alias-label-tertiary)",
   },
