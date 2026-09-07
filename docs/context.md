@@ -86,3 +86,7 @@ src/
 ## Build
 
 `tsc` emits host modules into `lib/`. `tsdown` then emits `lib/client.js` as a CJS module-loader factory: `window.__ModuleLoader__.load({ id, factory(require) })`. Keep `clean: false` so the host output remains, bundle application code, and leave host-owned React, React DOM, and DSH UI primitives external for the factory's `require`. Client CSS lives in `src/client/styles.css`. `scripts/embed-css.mjs` copies it into the client bundle at build time.
+
+`pnpm test:mount` packs the plugin and mounts it in an isolated `dsh@0.1.2-rc.1`
+Web instance. Set `DSH_VERSION=next` to test npm's current prerelease channel;
+CI runs that variant weekly without blocking the normal release gate.

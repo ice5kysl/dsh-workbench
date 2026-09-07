@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { promisify } from "node:util";
 import { countDiffLines } from "../shared/line-diff.js";
 import { isTextPreviewPath } from "../shared/preview-policy.js";
+import { sortReviewFiles } from "../shared/review-diff.js";
 import type { GitFileDiff, GitStatus } from "../shared/types.js";
 import { mapConcurrent } from "./concurrent.js";
 
@@ -53,14 +54,14 @@ export async function gitDiffFiles(root: string, scope: GitDiffScope): Promise<G
     ]);
     return { path, before, content, ...countDiffLines(before, content) };
   });
-  if (scope === "staged") return files;
+  if (scope === "staged") return sortReviewFiles(files);
   const raw = await runGit(root, ["ls-files", "--others", "--exclude-standard", "-z"]);
   const untracked = raw.split("\0").filter(isTextPreviewPath);
   const additions = await mapConcurrent(untracked, DIFF_FILE_CONCURRENCY, async (path) => {
     const content = await diskFile(root, path);
     return { path, before: null, content, ...countDiffLines(null, content) };
   });
-  return [...files, ...additions];
+  return sortReviewFiles([...files, ...additions]);
 }
 
 export async function gitDiffFile(root: string, scope: GitDiffScope, path: string): Promise<GitFileDiff | null> {

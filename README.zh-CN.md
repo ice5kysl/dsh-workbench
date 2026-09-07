@@ -80,6 +80,16 @@ pnpm test
 pnpm start -- /绝对路径/你的项目
 ```
 
+可在隔离的 DSH Web 实例中挂载打包后的插件：
+
+```bash
+pnpm test:mount
+DSH_VERSION=next pnpm test:mount
+```
+
+第一条命令使用受支持的 `0.1.2-rc.1` 基线；第二条跟随 npm 的 `next`
+渠道，并会通过每周的非阻塞兼容 smoke 自动执行。
+
 - Host：`src/index.ts` 导出 `name`、`inject`、`apply(ctx)`
 - Client：`dsh.client`、`exports["./client"]`、`window.__ModuleLoader__.load`
 - 样式：`src/client/styles.css`

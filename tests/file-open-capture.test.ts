@@ -36,6 +36,14 @@ test("official tool-row file links still open", () => {
   })).toBe("src/client/styles.css");
 });
 
+test("generic upload cards stay with the host instead of opening a workspace path", () => {
+  expect(filePathFromOpenHint({
+    className: "fileCard",
+    title: "report.pdf",
+    text: "report.pdf",
+  })).toBe(undefined);
+});
+
 test("read links open as views and write links open as diffs", () => {
   expect(fileOpenModeFromHint({ className: "row_fileLink", tool: "read", text: "a.ts" })).toBe("view");
   expect(fileOpenModeFromHint({ className: "row_fileLink", tool: "write", text: "a.ts" })).toBe("diff");

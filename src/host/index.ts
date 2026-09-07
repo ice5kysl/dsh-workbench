@@ -5,7 +5,7 @@ import { toFilePayload } from "./file-preview.js";
 import { sendJson } from "./http.js";
 import { createPathIdentity } from "./path-identity.js";
 import { EDITOR_BUNDLE_API_PATH, ACTIVITY_API_PATH, CONTENT_SEARCH_API_PATH, EVENTS_API_PATH, FILES_API_PATH, FILE_API_PATH, FILE_ASSET_API_PATH, GIT_DIFF_API_PATH, GIT_STATUS_API_PATH, MAX_IMAGE_PREVIEW_BYTES, normalizePath, REVIEW_API_PATH, SYSTEM_OPEN_API_PATH, WORKSPACE_API_PATH, type FileOpenMode, type GitFileDiff } from "../shared/types.js";
-import { completeSessionDiffs, reviewDiffCounts } from "../shared/review-diff.js";
+import { completeSessionDiffs, reviewDiffCounts, sortReviewFiles } from "../shared/review-diff.js";
 import { countDiffLines } from "../shared/line-diff.js";
 import { isTextPreviewPath } from "../shared/preview-policy.js";
 import { createChangePump } from "./change-pump.js";
@@ -240,7 +240,7 @@ export function apply(ctx: HostContext): void {
       let worktreeFiles: GitFileDiff[] = [];
       try { worktreeFiles = await gitDiffFiles(root, "uncommitted"); } catch { /* Git is optional */ }
       const files = completeSessionDiffs(worktreeFiles, sessionFiles);
-      sendJson(res, 200, { changes, files, counts: reviewDiffCounts(files), sessions, sessionId: selectedSession });
+      sendJson(res, 200, { changes: sortReviewFiles(changes), files, counts: reviewDiffCounts(files), sessions, sessionId: selectedSession });
     },
   });
 

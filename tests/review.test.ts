@@ -1,6 +1,6 @@
 import { WriteHistory } from "../src/host/write-history.js";
 import { reviewTreePath, scopedReviewChanges } from "../src/client/review/review-scope.js";
-import { completeSessionDiffs, reviewDiffCounts } from "../src/shared/review-diff.js";
+import { completeSessionDiffs, reviewDiffCounts, sortReviewFiles } from "../src/shared/review-diff.js";
 import { expect, test } from "vitest";
 
 test("review tree uses the active Git scope instead of session edits", () => {
@@ -23,8 +23,23 @@ test("complete session diff includes the worktree and history-only files", () =>
     { path: "current.ts", before: "old", content: "stale", additions: 1, deletions: 1 },
     { path: "committed.ts", before: "old", content: "new", additions: 1, deletions: 1 },
   ];
-  expect(completeSessionDiffs(worktree, history).map((file) => file.path)).toEqual(["current.ts", "committed.ts"]);
+  expect(completeSessionDiffs(worktree, history).map((file) => file.path)).toEqual(["committed.ts", "current.ts"]);
   expect(reviewDiffCounts(completeSessionDiffs(worktree, history))).toEqual({ additions: 2, deletions: 2 });
+});
+
+test("review files use the explorer's directory-first path order", () => {
+  const files = [
+    { path: "README.md", before: "", content: "", additions: 0, deletions: 0 },
+    { path: "src/z.ts", before: "", content: "", additions: 0, deletions: 0 },
+    { path: "src/client/a.ts", before: "", content: "", additions: 0, deletions: 0 },
+    { path: "src/index.ts", before: "", content: "", additions: 0, deletions: 0 },
+  ];
+  expect(sortReviewFiles(files).map((file) => file.path)).toEqual([
+    "src/client/a.ts",
+    "src/index.ts",
+    "src/z.ts",
+    "README.md",
+  ]);
 });
 
 test("review returns captured write changes with line counts", () => {

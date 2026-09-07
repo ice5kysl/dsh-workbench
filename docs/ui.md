@@ -41,6 +41,7 @@ use raw host interaction tokens in component styles.
 | Navigation selected | `--dsh-wb-nav-item-active-fill` | `--dsw-specific-sidebar-nav-item-active` |
 | Keyboard focus | `--dsh-wb-focus-ring` | `--dsw-alias-state-business-primary` |
 | Accent text / fill | `--dsh-wb-accent-label` / `--dsh-wb-accent-fill` | `--dsw-alias-state-business-primary` / `tertiary` |
+| Conversation file link | `--dsh-wb-link-label` | `--dsw-alias-label-link`, with an accent fallback for older DSH versions |
 | Floating surface text | `--dsh-wb-floating-surface-label` | `--dsw-alias-label-primary` |
 | Code editor | `--dsh-wb-code-*` | One Light / One Dark syntax palette; text surface remains host-token driven |
 

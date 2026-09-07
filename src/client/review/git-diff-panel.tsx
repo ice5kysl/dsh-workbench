@@ -44,12 +44,16 @@ const DiffFile = memo(function DiffFile({ file, collapsed, copied, sessionId, di
   const sectionRef = useRef<HTMLElement | null>(null);
   const editorRef = useRef<HTMLDivElement | null>(null);
   const [deferred, setDeferred] = useState(initialDeferredDiffState);
-  const state = useMemo(() => fileState(file), [file]);
+  // Git refreshes replace the file record even when this diff's text is
+  // unchanged. Keep the preview payload stable so CodeView does not destroy
+  // and recreate CodeMirror for an unrelated review update.
+  const state = useMemo(() => fileState(file), [file.before, file.content, file.path]);
+  const toggle = () => {
+    if (collapsed) setDeferred((current) => nextDeferredDiffState(current, { type: "visibility", nearViewport: true }));
+    onToggle(file.path);
+  };
   useEffect(() => {
-    if (collapsed) {
-      setDeferred((current) => nextDeferredDiffState(current, { type: "collapsed" }));
-      return undefined;
-    }
+    if (collapsed) return undefined;
     if (forceMount || typeof IntersectionObserver === "undefined") {
       setDeferred((current) => nextDeferredDiffState(current, { type: "visibility", nearViewport: true }));
       return undefined;
@@ -76,8 +80,8 @@ const DiffFile = memo(function DiffFile({ file, collapsed, copied, sessionId, di
   }, [deferred.mounted]);
   return (
     <section ref={sectionRef} className={`dsh-wb-diff-file${collapsed ? " is-collapsed" : ""}`} id={diffElementId(file.path)}>
-      <header className="dsh-wb-diff-file-head" onClick={() => onToggle(file.path)}>
-        <button className="dsh-wb-diff-collapse dsh-wb-button" type="button" aria-label={t(collapsed ? "expandDiff" : "collapseDiff")} aria-expanded={!collapsed} onClick={(event) => { event.stopPropagation(); onToggle(file.path); }}>
+      <header className="dsh-wb-diff-file-head" onClick={toggle}>
+        <button className="dsh-wb-diff-collapse dsh-wb-button" type="button" aria-label={t(collapsed ? "expandDiff" : "collapseDiff")} aria-expanded={!collapsed} onClick={(event) => { event.stopPropagation(); toggle(); }}>
           <TreeChevron open={!collapsed} />
         </button>
         <FileTypeIcon path={file.path} />
@@ -92,13 +96,13 @@ const DiffFile = memo(function DiffFile({ file, collapsed, copied, sessionId, di
           </WorkbenchTooltip>
         </div>
       </header>
-      {!collapsed && deferred.mounted ? <div ref={editorRef} className="dsh-wb-diff-file-editor"><CodeView state={state} sessionId={sessionId} diffView={diffView} /></div> : null}
+      {deferred.mounted ? <div ref={editorRef} className="dsh-wb-diff-file-editor"><CodeView state={state} sessionId={sessionId} diffView={diffView} /></div> : null}
       {!collapsed && !deferred.mounted && deferred.height > 0 ? <div className="dsh-wb-diff-file-placeholder" style={{ height: deferred.height }} aria-hidden="true" /> : null}
     </section>
   );
 });
 
-export function GitDiffPanel({ scope, revision, files: suppliedFiles, sessionId, revealPath: requestedRevealPath, revealVersion: requestedRevealVersion, diffView = "unified", onCountsChange }: { scope: Exclude<ReviewScope, "session">; revision: number; files?: GitFileDiff[]; sessionId?: string; revealPath?: string; revealVersion?: number; diffView?: DiffViewMode; onCountsChange?(counts: { additions: number; deletions: number }): void }) {
+export function GitDiffPanel({ scope, revision, files: suppliedFiles, sessionId, revealPath: requestedRevealPath, revealVersion: requestedRevealVersion, diffView = "unified", collapseAll = false, onCountsChange }: { scope: Exclude<ReviewScope, "session">; revision: number; files?: GitFileDiff[]; sessionId?: string; revealPath?: string; revealVersion?: number; diffView?: DiffViewMode; collapseAll?: boolean; onCountsChange?(counts: { additions: number; deletions: number }): void }) {
   const { i18n } = useWorkbenchServices();
   const [worktreeFiles, setWorktreeFiles] = useState<GitFileDiff[]>([]);
   const [loading, setLoading] = useState(true);
@@ -121,13 +125,8 @@ export function GitDiffPanel({ scope, revision, files: suppliedFiles, sessionId,
   }, [revision, scope, suppliedFiles]);
   const files = suppliedFiles ?? worktreeFiles;
   useEffect(() => {
-    const onCollapseAll = (event: Event) => {
-      const action = event instanceof CustomEvent ? event.detail : "";
-      setCollapsed(action === "collapse" ? new Set(files.map((file) => file.path)) : new Set());
-    };
-    window.addEventListener("dsh-wb-diff-collapse-all", onCollapseAll);
-    return () => window.removeEventListener("dsh-wb-diff-collapse-all", onCollapseAll);
-  }, [files]);
+    setCollapsed(collapseAll ? new Set(files.map((file) => file.path)) : new Set());
+  }, [collapseAll, files]);
   useEffect(() => {
     const onReveal = (event: Event) => {
       const path = event instanceof CustomEvent && typeof event.detail === "string" ? event.detail : "";

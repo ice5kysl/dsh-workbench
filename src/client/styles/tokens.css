@@ -17,6 +17,7 @@
   --dsh-wb-focus-ring: var(--dsw-alias-state-business-primary);
   --dsh-wb-accent-label: var(--dsw-alias-state-business-primary);
   --dsh-wb-accent-fill: var(--dsw-alias-state-business-tertiary);
+  --dsh-wb-link-label: var(--dsw-alias-label-link, var(--dsh-wb-accent-label));
   --dsh-wb-resize-fill: var(--dsw-alias-state-business-tertiary);
   --dsh-wb-diff-add-fill: color-mix(in srgb, var(--dsw-alias-state-success-primary) 14%, transparent);
   --dsh-wb-diff-delete-fill: color-mix(in srgb, var(--dsw-alias-state-error-primary) 14%, transparent);

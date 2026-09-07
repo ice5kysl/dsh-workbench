@@ -63,6 +63,8 @@ export function WorkbenchBody({
     reviewRevision,
     reviewUpdates,
     reviewScope,
+    reviewTabOpen,
+    allDiffsCollapsed,
     onGitCountsChange,
     diffCommands,
     diffMode,
@@ -95,6 +97,8 @@ export function WorkbenchBody({
     reviewRevision: number;
     reviewUpdates: Readonly<Record<string, number>>;
     reviewScope: ReviewScope;
+    reviewTabOpen: boolean;
+    allDiffsCollapsed: boolean;
     onGitCountsChange(counts: { additions: number; deletions: number }): void;
     diffCommands: { current: DiffPanelCommands | null };
     diffMode: boolean;
@@ -134,26 +138,29 @@ export function WorkbenchBody({
         <div className={`dsh-wb-main${diffMode ? " is-diff" : ""}`}>
           <div className="dsh-wb-code-column">
             <main className="dsh-wb-code">
-              {showWorkbenchHome ? (
+              {reviewTabOpen ? (
+                <div className="dsh-wb-diff-view" hidden={!diffMode}>
+                  <DiffPanel ref={diffCommands} sessionId={sessionId} revealPath={reviewRevealPath} revealVersion={reviewRevealVersion} revision={reviewRevision} scope={reviewScope} updates={reviewUpdates} diffView={diffView} collapseAll={allDiffsCollapsed} onCountsChange={onGitCountsChange} />
+                </div>
+              ) : null}
+              {!diffMode && showWorkbenchHome ? (
                 <EmptyTabChooser
                   onReview={openReviewTab}
                   onFile={newFileTab}
                 />
-              ) : activeEmptyFileTab && !activeEmptyFilePath ? (
+              ) : !diffMode && activeEmptyFileTab && !activeEmptyFilePath ? (
                 <div className="dsh-wb-empty"><strong>{t("openFile")}</strong><span>{t("selectFile")}</span></div>
-              ) : activeEmptyFileTab && state.path !== activeEmptyFilePath ? (
+              ) : !diffMode && activeEmptyFileTab && state.path !== activeEmptyFilePath ? (
                 <div className="dsh-wb-empty"><strong>{t("reading")}</strong></div>
-              ) : diffMode ? (
-                <DiffPanel ref={diffCommands} sessionId={sessionId} revealPath={reviewRevealPath} revealVersion={reviewRevealVersion} revision={reviewRevision} scope={reviewScope} updates={reviewUpdates} diffView={diffView} onCountsChange={onGitCountsChange} />
-              ) : state.path ? (
+              ) : !diffMode && state.path ? (
                 <CodeView state={state} commandsRef={previewCommands} sessionId={sessionId} />
-              ) : (
+              ) : !diffMode ? (
                 <div className="dsh-wb-empty">
                   <div className="dsh-wb-empty-icon"><EmptyFileIcon /></div>
                   <strong>{t("openFile")}</strong>
                   <span>{t("selectFile")}</span>
                 </div>
-              )}
+              ) : null}
             </main>
           </div>
           <div

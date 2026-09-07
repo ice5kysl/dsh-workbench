@@ -29,6 +29,7 @@ function previewMeta(state: FileState, t: LocaleStore["t"]): string {
 export function WorkbenchDrawer() {
   const { state, t, width, drawer, setWidth, pathCopied, setPathCopied, searchOpen, setSearchOpen, searchMode, diffMode, setDiffMode, diffView, setDiffView, reviewTabOpen, openReviewTab, closeReviewTab, reviewRevealPath, reviewRevealVersion, reviewRevision, reviewUpdates, reviewScope, setReviewScope, emptyTabOpen, setEmptyTabOpen, emptyFileTabs, emptyFilePaths, activeEmptyFileTab, setActiveEmptyFileTab, newFileTab, activateEmptyFileTab, closeEmptyFileTab, treeVisible, setTreeOpen, treeWidth, revealPath, treeCommands, previewCommands, diffCommands, mounted, closing, showTreeAt, resizeTree, handleTreeFileOpen, workspaceKey, sessionId, resizeStart, sidebarRef, sidebarWidthFromKey } = useWorkbenchShell();
   const [gitCounts, setGitCounts] = useState({ additions: 0, deletions: 0 });
+  const [allDiffsCollapsed, setAllDiffsCollapsed] = useState(false);
 
   if (!mounted) return null;
 
@@ -85,6 +86,8 @@ export function WorkbenchDrawer() {
           setPathCopied={setPathCopied}
           reviewScope={reviewScope}
           setReviewScope={setReviewScope}
+          allDiffsCollapsed={allDiffsCollapsed}
+          setAllDiffsCollapsed={setAllDiffsCollapsed}
           reviewCounts={gitCounts}
           sessionId={sessionId}
         />
@@ -97,6 +100,8 @@ export function WorkbenchDrawer() {
           reviewRevision={reviewRevision}
           reviewUpdates={reviewUpdates}
           reviewScope={reviewScope}
+          reviewTabOpen={reviewTabOpen}
+          allDiffsCollapsed={allDiffsCollapsed}
           onGitCountsChange={setGitCounts}
           diffCommands={diffCommands}
           diffMode={diffMode}

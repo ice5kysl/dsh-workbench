@@ -80,6 +80,17 @@ pnpm test
 pnpm start -- /absolute/path/to/your/project
 ```
 
+To mount the packed plugin in an isolated DSH Web instance:
+
+```bash
+pnpm test:mount
+DSH_VERSION=next pnpm test:mount
+```
+
+The first command uses the supported `0.1.2-rc.1` baseline. The second follows
+the npm `next` channel and is also run weekly as a non-blocking compatibility
+smoke test.
+
 - Host: `name`, `inject`, `apply(ctx)` from `src/index.ts`
 - Client: `dsh.client`, `exports["./client"]`, `window.__ModuleLoader__.load`
 - Styles: `src/client/styles.css`
