@@ -10,7 +10,9 @@ Complete the named job with the fewest moves. If a click on an existing row does
 
 ## Tokens
 
-Use host tokens only:
+Use host tokens for all workbench surfaces and controls. The CodeMirror syntax
+palette is the deliberate exception: it uses One Light / One Dark hues while
+the editor surface, foreground, cursor, and selection still use host tokens.
 
 | Role | Token |
 | --- | --- |
@@ -38,6 +40,9 @@ use raw host interaction tokens in component styles.
 | Navigation hover | `--dsh-wb-nav-item-hover-fill` | `--dsw-specific-sidebar-nav-item-hover` |
 | Navigation selected | `--dsh-wb-nav-item-active-fill` | `--dsw-specific-sidebar-nav-item-active` |
 | Keyboard focus | `--dsh-wb-focus-ring` | `--dsw-alias-state-business-primary` |
+| Accent text / fill | `--dsh-wb-accent-label` / `--dsh-wb-accent-fill` | `--dsw-alias-state-business-primary` / `tertiary` |
+| Floating surface text | `--dsh-wb-floating-surface-label` | `--dsw-alias-label-primary` |
+| Code editor | `--dsh-wb-code-*` | One Light / One Dark syntax palette; text surface remains host-token driven |
 
 Hover communicates availability; it never substitutes for selected state or
 keyboard focus. Shared button behavior belongs in `styles/controls.css`;
@@ -65,6 +70,9 @@ black fill, white text, 8px radius, and `8px 10px` padding. They open after
 - One primary action per surface: click a row to open, double-click to pin.
 - Hover uses nav-item-hover. Selected uses nav-item-active.
 - Keyboard: `focus-visible` 2px business outline, offset `-2px`.
+- Activating a tab scrolls it into view. Do not claim a keyboard shortcut unless it matches the host's documented shortcut model.
+- File workflow keeps browser and host-global commands unclaimed. Review, file search, content search, find, and go-to-line use their visible UI controls; keyboard handling stays with the focused control or an open transient surface.
+- A tab close affordance may be visually hidden while its tab is inactive, but it must not remain in the keyboard focus order until it is visible.
 - Icon-only buttons use `aria-label` and the host Tooltip component. It appears
   on pointer hover and keyboard focus. Do not retain a CSS transform on the
   sidebar while it is open: the Tooltip bubble renders beside its trigger and

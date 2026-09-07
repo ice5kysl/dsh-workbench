@@ -79,6 +79,6 @@ html.dsh-wb-is-resizing .dsh-wb-tree-resize[data-resizing] {
 }
 
 .dsh-wb-resize-handle:focus-visible {
-  outline: 2px solid var(--dsw-alias-state-business-primary);
+  outline: 2px solid var(--dsh-wb-focus-ring);
   outline-offset: -2px;
 }

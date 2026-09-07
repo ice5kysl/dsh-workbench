@@ -5,6 +5,7 @@
   --dsh-wb-button-hover-fill: var(--dsw-alias-interactive-bg-hover-solid);
   --dsh-wb-field-fill: var(--dsw-alias-interactive-bg-hover-solid);
   --dsh-wb-floating-surface-fill: var(--dsw-alias-bg-layer-2);
+  --dsh-wb-floating-surface-label: var(--dsw-alias-label-primary);
   --dsh-wb-floating-surface-hover-fill: var(--dsw-alias-interactive-bg-hover-solid);
   --dsh-wb-floating-surface-hover-border: var(--dsw-alias-button-ghost-active-border);
   --dsh-wb-button-active-fill: var(--dsw-alias-button-ghost-active-fill);
@@ -14,9 +15,42 @@
   --dsh-wb-nav-item-hover-fill: var(--dsw-specific-sidebar-nav-item-hover);
   --dsh-wb-nav-item-active-fill: var(--dsw-specific-sidebar-nav-item-active);
   --dsh-wb-focus-ring: var(--dsw-alias-state-business-primary);
+  --dsh-wb-accent-label: var(--dsw-alias-state-business-primary);
+  --dsh-wb-accent-fill: var(--dsw-alias-state-business-tertiary);
   --dsh-wb-resize-fill: var(--dsw-alias-state-business-tertiary);
   --dsh-wb-diff-add-fill: color-mix(in srgb, var(--dsw-alias-state-success-primary) 14%, transparent);
   --dsh-wb-diff-delete-fill: color-mix(in srgb, var(--dsw-alias-state-error-primary) 14%, transparent);
   --dsh-wb-diff-neutral-fill: color-mix(in srgb, var(--dsw-alias-label-tertiary) 8%, transparent);
+  --dsh-wb-code-label: var(--dsw-alias-label-primary);
+  --dsh-wb-code-comment-label: #a0a1a7;
+  --dsh-wb-code-keyword-label: #a626a4;
+  --dsh-wb-code-string-label: #50a14f;
+  --dsh-wb-code-literal-label: #986801;
+  --dsh-wb-code-type-label: #c18401;
+  --dsh-wb-code-property-label: #e45649;
+  --dsh-wb-code-function-label: #c18401;
+  --dsh-wb-code-variable-label: #e45649;
+  --dsh-wb-code-operator-label: #383a42;
+  --dsh-wb-code-tag-label: #e45649;
+  --dsh-wb-code-attribute-label: #986801;
+  --dsh-wb-code-meta-label: #c18401;
+  --dsh-wb-code-invalid-label: #ffffff;
+  --dsh-wb-code-selection-fill: color-mix(in srgb, var(--dsw-alias-state-business-primary) 28%, transparent);
   --dsh-wb-motion-fast: 120ms ease-out;
+}
+
+body[data-ds-dark-theme] :where(.dsh-wb-sidebar, .dsh-wb-toggle, .dsh-wb-tool-row) {
+  --dsh-wb-code-comment-label: #5c6370;
+  --dsh-wb-code-keyword-label: #c678dd;
+  --dsh-wb-code-string-label: #98c379;
+  --dsh-wb-code-literal-label: #d19a66;
+  --dsh-wb-code-type-label: #e5c07b;
+  --dsh-wb-code-property-label: #e06c75;
+  --dsh-wb-code-function-label: #61afef;
+  --dsh-wb-code-variable-label: #e06c75;
+  --dsh-wb-code-operator-label: #56b6c2;
+  --dsh-wb-code-tag-label: #e06c75;
+  --dsh-wb-code-attribute-label: #d19a66;
+  --dsh-wb-code-meta-label: #e5c07b;
+  --dsh-wb-code-invalid-label: #ffffff;
 }

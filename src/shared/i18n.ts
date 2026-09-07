@@ -34,7 +34,6 @@ export type MessageKey =
   | "selectFile"
   | "openFiles"
   | "closeFile"
-  | "shortcutHint"
   | "resetWidth"
   | "searchFiles"
   | "searchContent"
@@ -149,7 +148,6 @@ const zh: Record<MessageKey, string> = {
   selectFile: "点击文件路径，在这里打开文件",
   openFiles: "已打开文件",
   closeFile: "关闭文件",
-  shortcutHint: "快捷键：⌥⌘B",
   resetWidth: "双击恢复默认宽度",
   searchFiles: "打开文件",
   searchContent: "搜索文件内容",
@@ -265,7 +263,6 @@ const en: Record<MessageKey, string> = {
   selectFile: "Click a file path to open it here",
   openFiles: "Open files",
   closeFile: "Close file",
-  shortcutHint: "Shortcut: ⌥⌘B",
   resetWidth: "Double-click to reset width",
   searchFiles: "Open file",
   searchContent: "Search file contents",

@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
-import { shortcutAction } from "../chrome/shortcuts.js";
 import { DEFAULT_SIDEBAR_WIDTH, sidebarUsesDrawer, sidebarWidthForViewport, sidebarWidthFromKey, sidebarWidthFromPointer, readSidebarWidth, writeSidebarWidth } from "../chrome/sidebar.js";
 import { startResizeDrag } from "../chrome/resize-drag.js";
 import { clampTreeWidth, persistTreeWidth, savedTreeWidth, type TreeCommands } from "../explorer/file-tree.js";
@@ -65,6 +64,7 @@ export function useWorkbenchShell() {
     const [sessionId, setSessionId] = useState("");
     const [mounted, setMounted] = useState(state.visible);
     const [closing, setClosing] = useState(false);
+    const [entered, setEntered] = useState(state.visible);
     const previewCommands = useRef<PreviewCommands | null>(null);
     const diffCommands = useRef<DiffPanelCommands | null>(null);
     const treeCommands = useRef<TreeCommands | null>(null);
@@ -255,33 +255,6 @@ export function useWorkbenchShell() {
       if (path && state.active !== path) void store.activate(path);
     }, [activeEmptyFileTab, emptyFilePaths, state.active, store]);
 
-    useEffect(() => {
-      const onKey = (event: KeyboardEvent) => {
-        const action = shortcutAction(event, state);
-        if (!action) return;
-        if (action.type === "search" || action.type === "contentSearch") { event.preventDefault(); if (!state.visible) store.show(); setSearchMode(action.type === "contentSearch" ? "content" : "files"); setSearchOpen(true); return; }
-        if (action.type === "toggle") { event.preventDefault(); if (state.visible) store.hide(); else store.show(); return; }
-        if (action.type === "toggleTree") { event.preventDefault(); if (!state.visible) store.show(); setTreeOpen(!treeVisible); return; }
-        if (action.type === "find") {
-          if (!(event.target instanceof Node) || !sidebarRef.current?.contains(event.target)) return;
-          event.preventDefault(); previewCommands.current?.find(); return;
-        }
-        if (action.type === "gotoLine") {
-          if (!(event.target instanceof Node) || !sidebarRef.current?.contains(event.target)) return;
-          event.preventDefault(); previewCommands.current?.goToLine(); return;
-        }
-        event.preventDefault();
-        if (action.type === "hide") {
-          if (searchOpen) setSearchOpen(false);
-          else if (treeCommands.current?.consumeEscape()) return;
-          else store.hide();
-        } else if (action.type === "close") store.close(action.path);
-        else void store.activate(action.path);
-      };
-      window.addEventListener("keydown", onKey);
-      return () => window.removeEventListener("keydown", onKey);
-    }, [state.visible, state.active, state.open, searchOpen, store, treeVisible]);
-
     useEffect(() => followWorkspaceEvents(({ paths }) => {
       if (paths.length > 0) {
         setReviewUpdates((current) => {
@@ -310,6 +283,13 @@ export function useWorkbenchShell() {
     }, [state.visible, mounted]);
 
     useEffect(() => {
+      if (!state.visible) { setEntered(false); return; }
+      if (!mounted) return;
+      const frame = window.requestAnimationFrame(() => setEntered(true));
+      return () => window.cancelAnimationFrame(frame);
+    }, [state.visible, mounted]);
+
+    useEffect(() => {
       const appRoot = document.getElementById("root");
       appRoot?.classList.add("dsh-wb-sidebar-transition");
       return () => {
@@ -328,11 +308,12 @@ export function useWorkbenchShell() {
 
     useEffect(() => {
       const appRoot = document.getElementById("root");
-      appRoot?.classList.toggle("dsh-wb-sidebar-open", state.visible);
-      appRoot?.classList.toggle("dsh-wb-sidebar-drawer", state.visible && drawer);
+      const open = state.visible && mounted && entered;
+      appRoot?.classList.toggle("dsh-wb-sidebar-open", open);
+      appRoot?.classList.toggle("dsh-wb-sidebar-drawer", open && drawer);
       appRoot?.style.setProperty("--dsh-wb-sidebar-width", `${sidebarWidth}px`);
       writeSidebarWidth(window.localStorage, width);
-    }, [drawer, state.visible, sidebarWidth, width]);
+    }, [drawer, state.visible, mounted, entered, sidebarWidth, width]);
 
     const resizeStart = (event: React.PointerEvent<HTMLElement>) => {
       event.preventDefault();

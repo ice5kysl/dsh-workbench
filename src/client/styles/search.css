@@ -3,7 +3,7 @@
 .dsh-wb-search {
   padding: 8px;
   border: 1px solid var(--dsw-alias-border-l2);
-  border-radius: 10px;
+  border-radius: 8px;
   background: var(--dsw-specific-sidebar-fill);
   box-shadow: var(--dsw-shadow-lv2);
 }
@@ -24,7 +24,7 @@
   height: 32px;
   padding: 0 8px;
   border: 1px solid var(--dsw-alias-border-l2);
-  border-radius: 8px;
+  border-radius: 6px;
   color: var(--dsw-alias-label-tertiary);
   background: var(--dsw-alias-bg-layer-1);
 }
@@ -53,8 +53,8 @@
 
 .dsh-wb-search-close {
   display: grid;
-  width: 24px;
-  height: 24px;
+  width: 26px;
+  height: 26px;
   place-items: center;
   padding: 0 3px;
   border: 0;
@@ -112,8 +112,8 @@
   flex: 0 0 22px;
   place-items: center;
   border-radius: 5px;
-  color: var(--dsw-alias-state-business-primary);
-  background: var(--dsw-alias-state-business-tertiary);
+  color: var(--dsh-wb-accent-label);
+  background: var(--dsh-wb-accent-fill);
   font-size: 10px;
   font-weight: 700;
 }
@@ -147,7 +147,7 @@
 .dsh-wb-search-mark {
   padding: 0;
   color: inherit;
-  background: var(--dsw-alias-state-business-tertiary);
+  background: var(--dsh-wb-accent-fill);
   font: inherit;
 }
 

@@ -51,7 +51,7 @@ export function WorkbenchToggle() {
   const hasReview = files.length > 0;
   const label = state.visible ? t("hidePanel") : t("showPanel");
   return (
-    <WorkbenchTooltip label={`${label} · ${t("shortcutHint")}`}>
+    <WorkbenchTooltip label={label}>
     <button
       className={`dsh-wb-toggle${hasReview ? " is-review" : ""}`}
       type="button"

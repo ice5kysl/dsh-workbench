@@ -6,7 +6,7 @@ import { json } from "@codemirror/lang-json";
 import { markdown } from "@codemirror/lang-markdown";
 import { python } from "@codemirror/lang-python";
 import { xml } from "@codemirror/lang-xml";
-import { StreamLanguage, defaultHighlightStyle, foldGutter, foldKeymap, syntaxHighlighting } from "@codemirror/language";
+import { HighlightStyle, StreamLanguage, foldGutter, foldKeymap, syntaxHighlighting } from "@codemirror/language";
 import { c, cpp, csharp, dart, java, kotlin, scala } from "@codemirror/legacy-modes/mode/clike";
 import { diff } from "@codemirror/legacy-modes/mode/diff";
 import { dockerFile } from "@codemirror/legacy-modes/mode/dockerfile";
@@ -27,6 +27,7 @@ import { MergeView, unifiedMergeView } from "@codemirror/merge";
 import { search, searchKeymap } from "@codemirror/search";
 import { EditorState, StateEffect, type Extension } from "@codemirror/state";
 import { EditorView, keymap, lineNumbers } from "@codemirror/view";
+import { tags } from "@lezer/highlight";
 
 export type CodeSelection = {
   from: number;
@@ -41,6 +42,7 @@ const workbenchTheme = EditorView.theme({
   "&": {
     height: "100%",
     fontSize: "12px",
+    color: "var(--dsh-wb-code-label)",
     backgroundColor: "transparent",
   },
   ".cm-scroller": {
@@ -54,11 +56,42 @@ const workbenchTheme = EditorView.theme({
   },
   ".cm-content": {
     padding: "8px 0",
+    color: "var(--dsh-wb-code-label)",
+    caretColor: "var(--dsh-wb-code-label)",
+  },
+  ".cm-line": {
+    color: "var(--dsh-wb-code-label)",
+  },
+  "&.cm-focused .cm-selectionBackground, ::selection": {
+    backgroundColor: "var(--dsh-wb-code-selection-fill)",
+  },
+  "&.cm-focused .cm-cursor, .cm-dropCursor": {
+    borderLeftColor: "var(--dsh-wb-code-label)",
   },
   ".cm-activeLine, .cm-activeLineGutter": {
     backgroundColor: "transparent",
   },
 });
+
+const workbenchHighlightStyle = HighlightStyle.define([
+  { tag: tags.comment, color: "var(--dsh-wb-code-comment-label)", fontStyle: "italic" },
+  { tag: [tags.keyword, tags.controlKeyword, tags.definitionKeyword, tags.operatorKeyword], color: "var(--dsh-wb-code-keyword-label)" },
+  { tag: [tags.string, tags.special(tags.string), tags.regexp], color: "var(--dsh-wb-code-string-label)" },
+  { tag: [tags.number, tags.bool, tags.null, tags.atom], color: "var(--dsh-wb-code-literal-label)" },
+  { tag: [tags.typeName, tags.className], color: "var(--dsh-wb-code-type-label)" },
+  { tag: tags.propertyName, color: "var(--dsh-wb-code-property-label)" },
+  { tag: tags.function(tags.variableName), color: "var(--dsh-wb-code-function-label)" },
+  { tag: tags.variableName, color: "var(--dsh-wb-code-variable-label)" },
+  { tag: tags.operator, color: "var(--dsh-wb-code-operator-label)" },
+  { tag: tags.tagName, color: "var(--dsh-wb-code-tag-label)" },
+  { tag: tags.attributeName, color: "var(--dsh-wb-code-attribute-label)" },
+  { tag: tags.heading, color: "var(--dsh-wb-code-tag-label)", fontStyle: "bold" },
+  { tag: tags.emphasis, fontStyle: "italic" },
+  { tag: tags.strong, fontStyle: "bold" },
+  { tag: tags.link, color: "var(--dsh-wb-code-function-label)", textDecoration: "underline" },
+  { tag: tags.meta, color: "var(--dsh-wb-code-meta-label)" },
+  { tag: tags.invalid, color: "var(--dsh-wb-code-invalid-label)", fontStyle: "bold" },
+]);
 
 const diffTheme = EditorView.theme({
   "&.cm-merge-a .cm-changedLine, .cm-deletedChunk": {
@@ -178,7 +211,7 @@ export function createEditorExtensions(options: {
       ...foldKeymap,
       ...searchKeymap,
     ]),
-    syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
+    syntaxHighlighting(workbenchHighlightStyle),
     EditorView.editable.of(options.editable === true),
     EditorState.readOnly.of(options.editable !== true),
     workbenchTheme,

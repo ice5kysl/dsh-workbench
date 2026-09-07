@@ -30,20 +30,20 @@
 .dsh-wb-tool-path {
   padding: 0;
   border: 0;
-  color: var(--dsw-alias-state-business-primary);
+  color: var(--dsh-wb-accent-label);
   background: transparent;
   cursor: pointer;
   text-decoration: none;
 }
 
 .dsh-wb-tool-path:hover {
-  text-decoration: underline var(--dsw-alias-state-business-primary);
+  text-decoration: underline var(--dsh-wb-accent-label);
   text-underline-offset: 3px;
 }
 
 .dsh-wb-tool-path:focus-visible {
   border-radius: 3px;
   background: var(--dsh-wb-button-hover-fill);
-  text-decoration: underline var(--dsw-alias-state-business-primary);
+  text-decoration: underline var(--dsh-wb-accent-label);
   text-underline-offset: 3px;
 }

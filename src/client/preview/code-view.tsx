@@ -36,7 +36,7 @@ export function CodeView({ state, commandsRef, sessionId, diffView }: {
   const [outlineOpen, setOutlineOpen] = useState(false);
   const [selection, setSelection] = useState<CodeSelection | null>(null);
   const session = store.editorSession(state.path);
-  const editing = state.payload?.source === "workspace" && session.baseline !== null;
+  const editing = state.payload != null && state.payload.source !== "dsh-write" && session.baseline !== null;
   const draft = session.content;
   const activeSessionRef = useRef(session);
   activeSessionRef.current = session;
@@ -79,7 +79,7 @@ export function CodeView({ state, commandsRef, sessionId, diffView }: {
   const payload = state.payload;
   const kind = payload ? previewKind(payload.path) : "code";
   const isMarkdown = payload != null && kind === "markdown" && payload.source !== "dsh-write";
-  const canEdit = payload != null && payload.source === "workspace" && kind !== "image";
+  const canEdit = payload != null && payload.source !== "dsh-write" && kind !== "image";
   const dirty = editing && payload != null && draft !== session.baseline;
 
   const startEditing = () => {
@@ -180,6 +180,18 @@ export function CodeView({ state, commandsRef, sessionId, diffView }: {
 
   const outline = isMarkdown ? markdownOutline(editing ? draft : payload.content) : [];
   const previewContent = editing ? draft : payload.content;
+  const outlineControl = isMarkdown && !markdownSource && hasMarkdownOutline(outline) ? <div className="dsh-wb-markdown-outline">
+    {outlineOpen ? <div id="dsh-wb-markdown-outline-menu" className="dsh-wb-markdown-outline-menu" role="menu">
+      {outline.map((item, index) => <button key={`${item.level}-${item.label}-${index}`} type="button" className="dsh-wb-markdown-outline-item" style={{ paddingLeft: `${8 + Math.max(0, item.level - 1) * 10}px` }} onClick={() => {
+        const target = markdownRef.current?.querySelectorAll("h1, h2, h3, h4, h5, h6")[index] as HTMLElement | undefined;
+        target?.scrollIntoView({ behavior: "smooth", block: "start" });
+        target?.classList.add("dsh-wb-markdown-heading-flash");
+        window.setTimeout(() => target?.classList.remove("dsh-wb-markdown-heading-flash"), 1200);
+        setOutlineOpen(false);
+      }}><span>{item.label}</span></button>)}
+    </div> : null}
+    <WorkbenchTooltip label={t("markdownOutline")}><button className="dsh-wb-button dsh-wb-icon-button dsh-wb-preview-icon" type="button" aria-label={t("markdownOutline")} aria-controls="dsh-wb-markdown-outline-menu" aria-expanded={outlineOpen} aria-haspopup="menu" onClick={() => setOutlineOpen((open) => !open)}><Icon name="outline" /></button></WorkbenchTooltip>
+  </div> : null;
   const toolbar = isMarkdown || canEdit ? (
     <div className="dsh-wb-preview-toolbar">
       {isMarkdown ? <div className="dsh-wb-preview-modes" role="group" aria-label={t("viewOptions")}>
@@ -187,15 +199,16 @@ export function CodeView({ state, commandsRef, sessionId, diffView }: {
         <button className={`dsh-wb-preview-mode${markdownSource ? " is-active" : ""}`} type="button" aria-pressed={markdownSource} onClick={() => setMarkdownSource(true)}>{t("source")}</button>
       </div> : null}
       <div className="dsh-wb-preview-actions">
+        {outlineControl}
         {editing ? <>
           {dirty ? <span className="dsh-wb-dirty-dot" title={t("unsavedChanges")} aria-label={t("unsavedChanges")} /> : null}
           <button className="dsh-wb-preview-text-action" type="button" disabled={session.saving} onClick={cancelEditing}>{t("cancelEdit")}</button>
           <button className="dsh-wb-preview-text-action is-primary" type="button" disabled={session.saving} onClick={() => void save()}>{t("saveFile")}</button>
         </> : canEdit ? <WorkbenchTooltip label={t("editFile")}><button className="dsh-wb-button dsh-wb-icon-button dsh-wb-preview-icon" type="button" aria-label={t("editFile")} onClick={startEditing}><Icon name="edit" /></button></WorkbenchTooltip> : null}
         {canEdit ? <WorkbenchTooltip label={t("refreshFile")}><button className="dsh-wb-button dsh-wb-icon-button dsh-wb-preview-icon" type="button" aria-label={t("refreshFile")} onClick={refresh}><Icon name="refresh" /></button></WorkbenchTooltip> : null}
-        {saveState === "saving" ? <span className="dsh-wb-preview-status">{t("savingFile")}</span> : null}
-        {saveState === "saved" ? <span className="dsh-wb-preview-status">{t("fileSaved")}</span> : null}
-        {saveState === "failed" ? <span className="dsh-wb-preview-status is-error">{t("saveFile")}</span> : null}
+        {saveState === "saving" ? <span className="dsh-wb-preview-status" role="status" aria-live="polite">{t("savingFile")}</span> : null}
+        {saveState === "saved" ? <span className="dsh-wb-preview-status" role="status" aria-live="polite">{t("fileSaved")}</span> : null}
+        {saveState === "failed" ? <span className="dsh-wb-preview-status is-error" role="alert">{t("saveFile")}</span> : null}
       </div>
     </div>
   ) : null;
@@ -209,18 +222,6 @@ export function CodeView({ state, commandsRef, sessionId, diffView }: {
     return <div className="dsh-wb-preview-shell">
       {toolbar}
       <article ref={markdownRef} className="dsh-wb-markdown-preview" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(renderMarkdown(previewContent, payload.path), { USE_PROFILES: { html: true } }) }} />
-      {hasMarkdownOutline(outline) ? <div className="dsh-wb-markdown-outline">
-        {outlineOpen ? <div className="dsh-wb-markdown-outline-menu" role="menu">
-          {outline.map((item, index) => <button key={`${item.level}-${item.label}-${index}`} type="button" className="dsh-wb-markdown-outline-item" style={{ paddingLeft: `${8 + Math.max(0, item.level - 1) * 10}px` }} onClick={() => {
-            const target = markdownRef.current?.querySelectorAll("h1, h2, h3, h4, h5, h6")[index] as HTMLElement | undefined;
-            target?.scrollIntoView({ behavior: "smooth", block: "start" });
-            target?.classList.add("dsh-wb-markdown-heading-flash");
-            window.setTimeout(() => target?.classList.remove("dsh-wb-markdown-heading-flash"), 1200);
-            setOutlineOpen(false);
-          }}><span>{item.label}</span></button>)}
-        </div> : null}
-        <WorkbenchTooltip label={t("markdownOutline")}><button className="dsh-wb-button dsh-wb-icon-button dsh-wb-outline-button" type="button" aria-label={t("markdownOutline")} aria-expanded={outlineOpen} onClick={() => setOutlineOpen((open) => !open)}><Icon name="outline" /></button></WorkbenchTooltip>
-      </div> : null}
       {saveError ? <div className="dsh-wb-error">{t(saveError)}</div> : null}
     </div>;
   }

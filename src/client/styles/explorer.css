@@ -102,7 +102,7 @@
 }
 
 .dsh-wb-tree-search:focus-within {
-  border-color: var(--dsw-alias-state-business-primary);
+  border-color: var(--dsh-wb-focus-ring);
   background: var(--dsw-alias-bg-layer-1);
 }
 
@@ -120,9 +120,9 @@
 
 .dsh-wb-tree-search-clear {
   display: grid;
-  width: 22px;
-  height: 22px;
-  flex: 0 0 22px;
+  width: 26px;
+  height: 26px;
+  flex: 0 0 26px;
   place-items: center;
   padding: 0;
   border: 0;

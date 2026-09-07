@@ -166,7 +166,7 @@ test("file drawer tabs activate and close individual files", async () => {
   await store.open("b.ts");
   const ui = createWorkbenchUi(React, store, createLocaleStore("en"));
   const drawer = ui.FileDrawer();
-  const tabs = findElements(drawer, (node) => node.props?.role === "tab");
+  const tabs = findElements(drawer, (node) => node.props?.className === "dsh-wb-tab-name");
   expect(tabs.length).toBe(2);
   tabs[0].props.onClick();
   await Promise.resolve();
@@ -229,8 +229,8 @@ test("file drawer tabs expose active and close states", async () => {
   await store.open("b.ts");
   const ui = createWorkbenchUi(React, store, createLocaleStore("en"));
   const drawer = ui.FileDrawer();
-  const tabs = findElements(drawer, (node) => node.props?.role === "tab");
-  expect(tabs.map((node) => node.props["aria-selected"])).toEqual([false, true]);
+  const tabs = findElements(drawer, (node) => node.props?.className === "dsh-wb-tab-name");
+  expect(tabs.map((node) => node.props["aria-current"])).toEqual([undefined, "page"]);
   const closes = findElements(drawer, (node) => node.props?.className === "dsh-wb-tab-close");
   expect(closes.map((node) => node.props["aria-label"])).toEqual(["Close file: a.ts", "Close file: b.ts"]);
 });

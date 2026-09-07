@@ -2,7 +2,7 @@ import type { FileState } from "../store.js";
 import { FileTypeIcon, Icon, NewTabIcon, TreeChevron } from "../chrome/icons.js";
 import type { DiffViewMode } from "../preview/code-mirror.js";
 import { visibleBreadcrumbTargets } from "../explorer/tree-model.js";
-import { Fragment, useEffect, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import { HoverCard, Menu, writeClipboard } from "@deepseek-ai/dsh-client-ui-primitives";
 import { useWorkbenchServices } from "./runtime.js";
 import { WorkbenchTooltip } from "../chrome/tooltip.js";
@@ -128,6 +128,7 @@ export function WorkbenchHeader({
     const t = i18n.t;
     const [reviewScopeMenuOpen, setReviewScopeMenuOpen] = useState(false);
     const [allDiffsCollapsed, setAllDiffsCollapsed] = useState(false);
+    const tabRefs = useRef(new Map<string, HTMLButtonElement>());
     useEffect(() => setAllDiffsCollapsed(false), [reviewScope]);
     const normalFileTabs = state.open.filter((path) => !Object.values(emptyFilePaths).includes(path));
     const hasTabsAfter = (closing: "review" | "empty" | "file" | "normal") => (
@@ -149,9 +150,21 @@ export function WorkbenchHeader({
       setDiffMode(false);
       activateEmptyFileTab(id);
     };
+    let activeTabKey = "";
+    if (diffMode && reviewTabOpen) activeTabKey = "review";
+    else if (emptyTabOpen) activeTabKey = "empty";
+    else if (activeEmptyFileTab) activeTabKey = `draft:${activeEmptyFileTab}`;
+    else if (state.active) activeTabKey = `file:${state.active}`;
+    const tabRef = (key: string) => (element: HTMLButtonElement | null) => {
+      if (element) tabRefs.current.set(key, element);
+      else tabRefs.current.delete(key);
+    };
+    useEffect(() => {
+      tabRefs.current.get(activeTabKey)?.scrollIntoView({ block: "nearest", inline: "nearest" });
+    }, [activeTabKey]);
     return (
       <>
-        <nav className="dsh-wb-tabs" aria-label={t("openFiles")} role="tablist">
+        <nav className="dsh-wb-tabs" aria-label={t("openFiles")}>
           <div className="dsh-wb-tabstrip">
             {reviewTabOpen ? (
               <div className={`dsh-wb-tab is-review${diffMode ? " is-active" : ""}`} role="presentation">
@@ -159,8 +172,8 @@ export function WorkbenchHeader({
                 <button
                   className="dsh-wb-tab-name"
                   type="button"
-                  role="tab"
-                  aria-selected={diffMode}
+                  aria-current={diffMode ? "page" : undefined}
+                  ref={tabRef("review")}
                   onClick={openReviewTab}
                 >
                   {t("reviewTab")}
@@ -198,8 +211,8 @@ export function WorkbenchHeader({
                       <button
                         className="dsh-wb-tab-name"
                         type="button"
-                        role="tab"
-                        aria-selected={!diffMode && !emptyTabOpen && !activeEmptyFileTab && path === state.active}
+                        aria-current={!diffMode && !emptyTabOpen && !activeEmptyFileTab && path === state.active ? "page" : undefined}
+                        ref={tabRef(`file:${path}`)}
                         onClick={() => activateNormalFile(path)}
                         onDoubleClick={() => store.pin(path)}
                       >
@@ -237,8 +250,8 @@ export function WorkbenchHeader({
                 <button
                   className="dsh-wb-tab-name"
                   type="button"
-                  role="tab"
-                  aria-selected="true"
+                  aria-current="page"
+                  ref={tabRef("empty")}
                   onClick={() => setEmptyTabOpen(true)}
                 >
                   {t("newTab")}
@@ -267,8 +280,8 @@ export function WorkbenchHeader({
                 <button
                   className="dsh-wb-tab-name"
                   type="button"
-                  role="tab"
-                  aria-selected={activeEmptyFileTab === id}
+                  aria-current={activeEmptyFileTab === id ? "page" : undefined}
+                  ref={tabRef(`draft:${id}`)}
                   onClick={() => { setEmptyTabOpen(false); setDiffMode(false); activateEmptyFileTab(id); }}
                 >
                   {emptyFilePaths[id] ? emptyFilePaths[id].split("/").pop() || t("file") : t("file")}
