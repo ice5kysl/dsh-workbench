@@ -43,6 +43,11 @@
   width: calc(100% - min(var(--dsh-wb-sidebar-width, 520px), 100vw));
 }
 
+#root.dsh-wb-sidebar-open.dsh-wb-sidebar-drawer {
+  width: 100%;
+  margin-right: 0;
+}
+
 html.dsh-wb-is-resizing #root.dsh-wb-sidebar-transition,
 html.dsh-wb-is-resizing .dsh-wb-rail {
   transition: none;

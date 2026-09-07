@@ -294,20 +294,12 @@ export function WorkbenchHeader({
             ))}
           </div>
           <div className="dsh-wb-tab-type-picker">
-            <WorkbenchTooltip label={t("newTab")}>
+            <WorkbenchTooltip label={t("openFile")}>
             <button
               type="button"
               className="dsh-wb-tabbar-add"
-              aria-label={t("newTab")}
-              onClick={() => {
-                if (reviewTabOpen) {
-                  newFileTab();
-                } else {
-                  setEmptyTabOpen(true);
-                  setActiveEmptyFileTab("");
-                  setDiffMode(false);
-                }
-              }}
+              aria-label={t("openFile")}
+              onClick={newFileTab}
             >
               <NewTabIcon />
             </button>

@@ -393,7 +393,7 @@ test("workbench controls expose accurate accessibility state", async () => {
   await store.open("src/example.ts");
   const separator = findElement(ui.FileDrawer(), (node) => node.props?.role === "separator");
   expect(separator).toBeTruthy();
-  expect(separator.props["aria-valuemin"]).toBe(520);
+  expect(separator.props["aria-valuemin"]).toBe(400);
   expect(separator.props["aria-valuemax"]).toBe(1200);
   expect(separator.props["aria-valuenow"]).toBe(600);
 });
@@ -424,12 +424,12 @@ test("file drawer plus button and breadcrumbs are wired", async () => {
   expect(findElement(drawer, (node) => node.props?.className === "dsh-wb-tree")).toBeTruthy();
   const rails = findElements(drawer, (node) => node.props?.className?.startsWith("dsh-wb-rail"));
   expect(rails).toHaveLength(1);
-  expect(rails[0].props["aria-hidden"]).toBe(false);
+  expect(rails[0].props["aria-hidden"]).toBe(true);
   expect(findElement(drawer, (node) => node.props?.className === "dsh-wb-code-column")).toBeTruthy();
   expect(findElement(drawer, (node) => node.props?.className === "dsh-wb-review")).toBe(undefined);
 });
 
-test("file drawer shows the workspace tree by default", () => {
+test("file drawer keeps the workspace tree available but collapsed by default", () => {
   const store = createFileStore(async (path) => ({
     path,
     content: path,
@@ -443,6 +443,8 @@ test("file drawer shows the workspace tree by default", () => {
   const drawer = ui.FileDrawer();
   expect(findElement(drawer, (node) => node.props?.className === "dsh-wb-tree-resize")).toBeTruthy();
   expect(findElement(drawer, (node) => node.props?.className === "dsh-wb-tree")).toBeTruthy();
+  const rail = findElement(drawer, (node) => node.props?.className?.startsWith("dsh-wb-rail"));
+  expect(rail?.props["aria-hidden"]).toBe(true);
   expect(findElement(drawer, (node) => node.props?.className === "dsh-wb-tree-rail")).toBe(undefined);
 });
 

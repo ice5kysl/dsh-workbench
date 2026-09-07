@@ -55,7 +55,7 @@ export function writeTreeOpen(storage: TreeStorage, value: string[]): void {
   }
 }
 
-export function readTreeVisible(storage: TreeStorage, fallback = true): boolean {
+export function readTreeVisible(storage: TreeStorage, fallback = false): boolean {
   try {
     const value = storage.getItem(TREE_VISIBLE_KEY);
     if (value == null) return fallback;

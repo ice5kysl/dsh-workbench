@@ -112,7 +112,7 @@ test("tree visibility persists through the bounded storage seam", () => {
     getItem(key) { return values.get(key) ?? null; },
     setItem(key, value) { values.set(key, value); },
   };
-  expect(readTreeVisible(storage)).toBe(true);
+  expect(readTreeVisible(storage)).toBe(false);
   writeTreeVisible(storage, false);
   expect(readTreeVisible(storage)).toBe(false);
   expect(clampTreeWidth(200)).toBe(260);

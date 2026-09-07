@@ -71,3 +71,4 @@ black fill, white text, 8px radius, and `8px 10px` padding. They open after
   a transformed sidebar would offset its fixed positioning.
 - Show `+/−` counts when they are non-zero.
 - Review and the file tree share one rail. Same head height, same row, same hover. The mode toggle replaces the list.
+- On viewports narrower than 768px, the workbench is a full-width drawer and does not reflow the conversation.

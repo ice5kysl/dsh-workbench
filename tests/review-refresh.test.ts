@@ -6,7 +6,7 @@ test("a same-session review refresh never changes the selected tab", () => {
   expect(reviewRefreshAction(false, false)).toBeNull();
 });
 
-test("a new session opens its review only when it has captured edits", () => {
-  expect(reviewRefreshAction(true, true)).toEqual({ openReview: true, showDiff: true, openTree: true });
-  expect(reviewRefreshAction(true, false)).toEqual({ openReview: false, showDiff: false, openTree: false });
+test("a new session never steals focus for its captured edits", () => {
+  expect(reviewRefreshAction(true, true)).toBeNull();
+  expect(reviewRefreshAction(true, false)).toBeNull();
 });

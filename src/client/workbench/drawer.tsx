@@ -27,7 +27,7 @@ function previewMeta(state: FileState, t: LocaleStore["t"]): string {
 }
 
 export function WorkbenchDrawer() {
-  const { state, t, width, setWidth, pathCopied, setPathCopied, searchOpen, setSearchOpen, searchMode, diffMode, setDiffMode, diffView, setDiffView, reviewTabOpen, openReviewTab, closeReviewTab, reviewRevealPath, reviewRevealVersion, reviewRevision, reviewUpdates, reviewScope, setReviewScope, emptyTabOpen, setEmptyTabOpen, emptyFileTabs, emptyFilePaths, activeEmptyFileTab, setActiveEmptyFileTab, newFileTab, activateEmptyFileTab, closeEmptyFileTab, treeVisible, setTreeOpen, treeWidth, revealPath, treeCommands, previewCommands, diffCommands, mounted, closing, showTreeAt, resizeTree, handleTreeFileOpen, workspaceKey, sessionId, resizeStart, sidebarRef, sidebarWidthFromKey } = useWorkbenchShell();
+  const { state, t, width, drawer, setWidth, pathCopied, setPathCopied, searchOpen, setSearchOpen, searchMode, diffMode, setDiffMode, diffView, setDiffView, reviewTabOpen, openReviewTab, closeReviewTab, reviewRevealPath, reviewRevealVersion, reviewRevision, reviewUpdates, reviewScope, setReviewScope, emptyTabOpen, setEmptyTabOpen, emptyFileTabs, emptyFilePaths, activeEmptyFileTab, setActiveEmptyFileTab, newFileTab, activateEmptyFileTab, closeEmptyFileTab, treeVisible, setTreeOpen, treeWidth, revealPath, treeCommands, previewCommands, diffCommands, mounted, closing, showTreeAt, resizeTree, handleTreeFileOpen, workspaceKey, sessionId, resizeStart, sidebarRef, sidebarWidthFromKey } = useWorkbenchShell();
   const [gitCounts, setGitCounts] = useState({ additions: 0, deletions: 0 });
 
   if (!mounted) return null;
@@ -36,12 +36,12 @@ export function WorkbenchDrawer() {
     <>
       <aside
         ref={sidebarRef}
-        className="dsh-wb-sidebar"
+        className={`dsh-wb-sidebar${drawer ? " is-drawer" : ""}`}
         data-state={closing ? "closing" : "open"}
-        style={{ width: `${width}px` }}
+        style={{ width: drawer ? "100vw" : `${width}px` }}
         aria-label={t("ariaWorkspace")}
       >
-        <div
+        {!drawer ? <div
           className="dsh-wb-resize-handle"
           role="separator"
           aria-label={t("resize")}
@@ -57,7 +57,7 @@ export function WorkbenchDrawer() {
             event.preventDefault();
             setWidth((current) => sidebarWidthFromKey(current, event.key));
           }}
-        />
+        /> : null}
         <WorkbenchHeader
           state={state}
           diffMode={diffMode}

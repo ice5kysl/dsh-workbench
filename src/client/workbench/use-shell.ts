@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { shortcutAction } from "../chrome/shortcuts.js";
-import { DEFAULT_SIDEBAR_WIDTH, sidebarWidthFromKey, sidebarWidthFromPointer, readSidebarWidth, writeSidebarWidth } from "../chrome/sidebar.js";
+import { DEFAULT_SIDEBAR_WIDTH, sidebarUsesDrawer, sidebarWidthForViewport, sidebarWidthFromKey, sidebarWidthFromPointer, readSidebarWidth, writeSidebarWidth } from "../chrome/sidebar.js";
 import { startResizeDrag } from "../chrome/resize-drag.js";
 import { clampTreeWidth, persistTreeWidth, savedTreeWidth, type TreeCommands } from "../explorer/file-tree.js";
 import { readTreeVisible, writeTreeOpen, writeTreeVisible } from "../explorer/tree-model.js";
@@ -23,8 +23,12 @@ function savedSidebarWidth(): number {
   try { return readSidebarWidth(window.localStorage); } catch { return DEFAULT_SIDEBAR_WIDTH; }
 }
 
+function currentViewportWidth(): number {
+  return typeof window === "undefined" ? Number.MAX_SAFE_INTEGER : window.innerWidth;
+}
+
 function savedTreeVisible(): boolean {
-  try { return readTreeVisible(window.localStorage); } catch { return true; }
+  try { return readTreeVisible(window.localStorage); } catch { return false; }
 }
 
 function workspacePath(path: string, root: string): string {
@@ -39,6 +43,9 @@ export function useWorkbenchShell() {
     const state = useSyncExternalStore(store.subscribe, store.getSnapshot, store.getSnapshot) as FileState;
     const t = i18n.t;
     const [width, setWidth] = useState(savedSidebarWidth);
+    const [viewportWidth, setViewportWidth] = useState(currentViewportWidth);
+    const sidebarWidth = sidebarWidthForViewport(width, viewportWidth);
+    const drawer = sidebarUsesDrawer(viewportWidth);
     const [pathCopied, setPathCopied] = useState(false);
     const [searchOpen, setSearchOpenState] = useState(false);
     const [searchMode, setSearchMode] = useState<"files" | "content">("files");
@@ -194,7 +201,7 @@ export function useWorkbenchShell() {
 
     const setTreeOpen = (next: boolean) => {
       setTreeVisible(next);
-      writeTreeVisible(window.localStorage, next);
+      if (typeof window !== "undefined") writeTreeVisible(window.localStorage, next);
     };
 
     const createFileTab = () => {
@@ -308,16 +315,24 @@ export function useWorkbenchShell() {
       return () => {
         appRoot?.classList.remove("dsh-wb-sidebar-transition");
         appRoot?.classList.remove("dsh-wb-sidebar-open");
+        appRoot?.classList.remove("dsh-wb-sidebar-drawer");
         appRoot?.style.removeProperty("--dsh-wb-sidebar-width");
       };
     }, []);
 
     useEffect(() => {
+      const updateViewportWidth = () => setViewportWidth(window.innerWidth);
+      window.addEventListener("resize", updateViewportWidth);
+      return () => window.removeEventListener("resize", updateViewportWidth);
+    }, []);
+
+    useEffect(() => {
       const appRoot = document.getElementById("root");
       appRoot?.classList.toggle("dsh-wb-sidebar-open", state.visible);
-      appRoot?.style.setProperty("--dsh-wb-sidebar-width", `${width}px`);
+      appRoot?.classList.toggle("dsh-wb-sidebar-drawer", state.visible && drawer);
+      appRoot?.style.setProperty("--dsh-wb-sidebar-width", `${sidebarWidth}px`);
       writeSidebarWidth(window.localStorage, width);
-    }, [state.visible, width]);
+    }, [drawer, state.visible, sidebarWidth, width]);
 
     const resizeStart = (event: React.PointerEvent<HTMLElement>) => {
       event.preventDefault();
@@ -333,5 +348,5 @@ export function useWorkbenchShell() {
     const handleTreeFileOpen = useCallback((path: string, mode: FileOpenMode, kind: TabOpenKind) => {
       openTreeFile(path, mode, undefined, kind);
     }, [openTreeFile]);
-    return { state, t, width, setWidth, pathCopied, setPathCopied, searchOpen, setSearchOpen, searchMode, setSearchMode, diffMode, setDiffMode, diffView, setDiffView, reviewTabOpen, openReviewTab, closeReviewTab, reviewChanges, reviewRevealPath, reviewRevealVersion, reviewRevision, reviewUpdates, reviewScope, setReviewScope, emptyTabOpen, setEmptyTabOpen, emptyFileTabs, emptyFilePaths, activeEmptyFileTab, setActiveEmptyFileTab, newFileTab: createFileTab, activateEmptyFileTab, closeEmptyFileTab, bindEmptyFilePath, treeVisible, setTreeOpen, treeWidth, revealPath, treeCommands, previewCommands, diffCommands, mounted, closing, showTreeAt, resizeTree, handleTreeFileOpen, workspaceKey, sessionId, resizeStart, sidebarRef, sidebarWidthFromKey };
+    return { state, t, width: sidebarWidth, drawer, setWidth, pathCopied, setPathCopied, searchOpen, setSearchOpen, searchMode, setSearchMode, diffMode, setDiffMode, diffView, setDiffView, reviewTabOpen, openReviewTab, closeReviewTab, reviewChanges, reviewRevealPath, reviewRevealVersion, reviewRevision, reviewUpdates, reviewScope, setReviewScope, emptyTabOpen, setEmptyTabOpen, emptyFileTabs, emptyFilePaths, activeEmptyFileTab, setActiveEmptyFileTab, newFileTab: createFileTab, activateEmptyFileTab, closeEmptyFileTab, bindEmptyFilePath, treeVisible, setTreeOpen, treeWidth, revealPath, treeCommands, previewCommands, diffCommands, mounted, closing, showTreeAt, resizeTree, handleTreeFileOpen, workspaceKey, sessionId, resizeStart, sidebarRef, sidebarWidthFromKey };
 }

@@ -1,6 +1,8 @@
 export const DEFAULT_SIDEBAR_WIDTH = 600;
-export const MIN_SIDEBAR_WIDTH = 520;
+export const MIN_SIDEBAR_WIDTH = 400;
 export const MAX_SIDEBAR_WIDTH = 1200;
+export const MIN_CONVERSATION_WIDTH = 360;
+export const SIDEBAR_DRAWER_BREAKPOINT = 768;
 export const SIDEBAR_WIDTH_KEY = "dsh-workbench.sidebar-width";
 
 export type SidebarStorage = Pick<Storage, "getItem" | "setItem">;
@@ -9,8 +11,17 @@ export function clampSidebarWidth(value: number): number {
   return Math.max(MIN_SIDEBAR_WIDTH, Math.min(MAX_SIDEBAR_WIDTH, value));
 }
 
+export function sidebarWidthForViewport(value: number, viewportWidth: number): number {
+  const maximum = Math.max(MIN_SIDEBAR_WIDTH, viewportWidth - MIN_CONVERSATION_WIDTH);
+  return Math.min(clampSidebarWidth(value), maximum);
+}
+
+export function sidebarUsesDrawer(viewportWidth: number): boolean {
+  return viewportWidth < SIDEBAR_DRAWER_BREAKPOINT;
+}
+
 export function sidebarWidthFromPointer(clientX: number, viewportWidth: number): number {
-  return clampSidebarWidth(viewportWidth - clientX);
+  return sidebarWidthForViewport(viewportWidth - clientX, viewportWidth);
 }
 
 export function sidebarWidthFromKey(current: number, key: string): number {

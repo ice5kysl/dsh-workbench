@@ -36,9 +36,13 @@ export function SearchPanel({ onClose, mode = "files" }: { onClose: () => void; 
     const [loading, setLoading] = useState(false);
     const [failed, setFailed] = useState(false);
     const [activeIndex, setActiveIndex] = useState(0);
+    const [requestVersion, setRequestVersion] = useState(0);
     const inputRef = useRef<HTMLInputElement | null>(null);
     const needle = query.trim();
     const hits: SearchHit[] = mode === "files" ? (needle ? rankSearchHits(results, needle) : recentSearchHits(fileState.open)) : [];
+    const activeHitId = mode === "content"
+      ? contentResults[activeIndex] ? `dsh-wb-content-hit-${activeIndex}` : undefined
+      : hits[activeIndex] ? `dsh-wb-search-hit-${activeIndex}` : undefined;
 
     useEffect(() => {
       inputRef.current?.focus();
@@ -74,7 +78,7 @@ export function SearchPanel({ onClose, mode = "files" }: { onClose: () => void; 
         cancelled = true;
         window.clearTimeout(timer);
       };
-    }, [needle, mode]);
+    }, [needle, mode, requestVersion]);
 
     const open = (path: string) => {
       onClose();
@@ -142,7 +146,16 @@ export function SearchPanel({ onClose, mode = "files" }: { onClose: () => void; 
     );
 
     const renderContentHit = (hit: ContentSearchHit, index: number) => (
-      <button key={`${hit.path}:${hit.line}`} type="button" className={`dsh-wb-search-result${index === activeIndex ? " is-active" : ""}`} onMouseEnter={() => setActiveIndex(index)} onClick={() => openContent(hit)}>
+      <button
+        key={`${hit.path}:${hit.line}`}
+        id={`dsh-wb-content-hit-${index}`}
+        type="button"
+        role="option"
+        aria-selected={index === activeIndex}
+        className={`dsh-wb-search-result${index === activeIndex ? " is-active" : ""}`}
+        onMouseEnter={() => setActiveIndex(index)}
+        onClick={() => openContent(hit)}
+      >
         <span className="dsh-wb-search-result-glyph">{hit.line}</span>
         <span className="dsh-wb-search-result-copy">
           <span className="dsh-wb-search-result-name">{hit.path}</span>
@@ -161,7 +174,7 @@ export function SearchPanel({ onClose, mode = "files" }: { onClose: () => void; 
             type="search"
             aria-label={t(mode === "content" ? "searchContent" : "searchFiles")}
             aria-controls="dsh-wb-search-results"
-            aria-activedescendant={hits[activeIndex] ? `dsh-wb-search-hit-${activeIndex}` : undefined}
+            aria-activedescendant={activeHitId}
             placeholder={t(mode === "content" ? "contentSearchPlaceholder" : "searchPlaceholder")}
             onChange={(event: ChangeEvent<HTMLInputElement>) => setQuery(event.target.value)}
             onKeyDown={onSearchKey}
@@ -181,7 +194,7 @@ export function SearchPanel({ onClose, mode = "files" }: { onClose: () => void; 
           {!needle && hits.length > 0 ? <div className="dsh-wb-search-state">{t("recentFiles")}</div> : null}
           {!needle && hits.length === 0 ? <div className="dsh-wb-search-state">{t(mode === "content" ? "contentSearchHint" : "searchTypeHint")}</div> : null}
           {needle && loading && (mode === "content" ? contentResults.length : hits.length) === 0 ? <div className="dsh-wb-search-state">{t("searching")}</div> : null}
-          {needle && !loading && failed ? <div className="dsh-wb-search-state">{t("searchError")}</div> : null}
+          {needle && !loading && failed ? <div className="dsh-wb-search-state" role="status">{t("searchError")} <button type="button" onClick={() => setRequestVersion((version) => version + 1)}>{t("retryEditor")}</button></div> : null}
           {needle && !loading && !failed && (mode === "content" ? contentResults.length : hits.length) === 0 ? <div className="dsh-wb-search-state">{t("searchNoResults")}</div> : null}
           {mode === "content" ? contentResults.map(renderContentHit) : hits.map(renderHit)}
         </div>

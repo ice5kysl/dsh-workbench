@@ -3,9 +3,13 @@ import { expect, test } from "vitest";
 import {
   DEFAULT_SIDEBAR_WIDTH,
   MAX_SIDEBAR_WIDTH,
+  MIN_CONVERSATION_WIDTH,
   MIN_SIDEBAR_WIDTH,
+  SIDEBAR_DRAWER_BREAKPOINT,
   clampSidebarWidth,
   readSidebarWidth,
+  sidebarWidthForViewport,
+  sidebarUsesDrawer,
   sidebarWidthFromKey,
   sidebarWidthFromPointer,
   writeSidebarWidth,
@@ -19,8 +23,18 @@ test("sidebar width clamps saved and interactive values", () => {
 
 test("dragging the separator derives width from the viewport edge", () => {
   expect(sidebarWidthFromPointer(900, 1440)).toBe(540);
-  expect(sidebarWidthFromPointer(200, 1440)).toBe(MAX_SIDEBAR_WIDTH);
+  expect(sidebarWidthFromPointer(200, 1440)).toBe(1440 - MIN_CONVERSATION_WIDTH);
   expect(sidebarWidthFromPointer(1400, 1440)).toBe(MIN_SIDEBAR_WIDTH);
+});
+
+test("sidebar keeps room for the conversation on narrow desktop windows", () => {
+  expect(sidebarWidthForViewport(600, 768)).toBe(768 - MIN_CONVERSATION_WIDTH);
+  expect(sidebarWidthFromPointer(0, 768)).toBe(768 - MIN_CONVERSATION_WIDTH);
+});
+
+test("small viewports use the overlay drawer instead of shrinking the conversation", () => {
+  expect(sidebarUsesDrawer(SIDEBAR_DRAWER_BREAKPOINT - 1)).toBe(true);
+  expect(sidebarUsesDrawer(SIDEBAR_DRAWER_BREAKPOINT)).toBe(false);
 });
 
 test("keyboard resize moves in fixed steps and ignores other keys", () => {
