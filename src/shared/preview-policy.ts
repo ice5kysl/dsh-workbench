@@ -9,6 +9,8 @@ const TEXT_EXTENSIONS = new Set([
   "properties", "env", "sh", "bash", "zsh", "fish", "c", "h", "cpp",
   "cc", "cxx", "hpp", "hxx", "go", "rs", "java", "py", "pyw", "rb",
   "rake", "gemspec", "php", "sql", "diff", "patch", "txt", "log",
+  "m", "r", "jl", "lua", "cs", "kt", "kts", "scala", "swift", "dart",
+  "vue", "svelte", "xml", "xsd", "xsl", "xslt", "pyi",
 ]);
 
 const TEXT_BASENAMES = new Set([

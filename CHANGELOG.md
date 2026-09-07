@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.15.0 - 2026-09-07
+
+### Features
+
+- Add editable code previews with undo/redo, per-file drafts, dirty-close protection, and external-change conflict checks.
+- Load the CodeMirror editor bundle on demand, including MATLAB and the expanded code-language preview set.
+- Add a real packed-plugin DSH mount smoke test covering browser activation and editor loading.
+
 ## 0.14.1 - 2026-09-04
 
 ### Fixes

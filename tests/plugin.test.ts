@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { reviewCountsFor } from "../src/host/file-preview.js";
 import { apply, inject, name } from "../src/index.js";
-import { ACTIVITY_API_PATH, CONTENT_SEARCH_API_PATH, EVENTS_API_PATH, FILES_API_PATH, FILE_API_PATH, FILE_ASSET_API_PATH, GIT_DIFF_API_PATH, GIT_STATUS_API_PATH, REVIEW_API_PATH, SYSTEM_OPEN_API_PATH, WORKSPACE_API_PATH } from "../src/shared/types.js";
+import { EDITOR_BUNDLE_API_PATH, ACTIVITY_API_PATH, CONTENT_SEARCH_API_PATH, EVENTS_API_PATH, FILES_API_PATH, FILE_API_PATH, FILE_ASSET_API_PATH, GIT_DIFF_API_PATH, GIT_STATUS_API_PATH, REVIEW_API_PATH, SYSTEM_OPEN_API_PATH, WORKSPACE_API_PATH } from "../src/shared/types.js";
 import { expect, test } from "vitest";
 
 function jsonRequest(url, body, method = "GET") {
@@ -52,7 +52,7 @@ test("apply registers the file route and records session events", async () => {
       listeners.push({ event, handler });
     },
   });
-  expect(routes.map((route) => route.path)).toEqual([FILES_API_PATH, FILE_API_PATH, CONTENT_SEARCH_API_PATH, ACTIVITY_API_PATH, SYSTEM_OPEN_API_PATH, REVIEW_API_PATH, WORKSPACE_API_PATH, EVENTS_API_PATH, FILE_ASSET_API_PATH, GIT_STATUS_API_PATH, GIT_DIFF_API_PATH]);
+  expect(routes.map((route) => route.path)).toEqual([EDITOR_BUNDLE_API_PATH, FILES_API_PATH, FILE_API_PATH, CONTENT_SEARCH_API_PATH, ACTIVITY_API_PATH, SYSTEM_OPEN_API_PATH, REVIEW_API_PATH, WORKSPACE_API_PATH, EVENTS_API_PATH, FILE_ASSET_API_PATH, GIT_STATUS_API_PATH, GIT_DIFF_API_PATH]);
   expect(listeners.map((listener) => listener.event)).toEqual(["session/created", "session/event"]);
 });
 
@@ -68,7 +68,7 @@ test("workspace files route searches paths without reading file contents", async
     on() {},
   });
   let body;
-  await routes[0].handler(
+  await routes.find((route) => route.path === FILES_API_PATH).handler(
     { url: `${FILES_API_PATH}?q=package.json` },
     {
       setHeader() {},
@@ -235,7 +235,7 @@ test("apply replays existing session events into file previews", async () => {
     on() {},
   });
   let body;
-  await routes[1].handler(
+  await routes.find((route) => route.path === FILE_API_PATH).handler(
     { url: `${FILE_API_PATH}?path=package.json` },
     {
       setHeader() {},
@@ -276,7 +276,7 @@ test("apply falls back to legacy session events when no snapshot API is availabl
     on() {},
   });
   let body;
-  await routes[1].handler(
+  await routes.find((route) => route.path === FILE_API_PATH).handler(
     { url: `${FILE_API_PATH}?path=package.json` },
     {
       setHeader() {},

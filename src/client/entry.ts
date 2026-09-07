@@ -13,7 +13,10 @@ import { followDshSession, followDshWorkspace, notifyWorkbenchSession, retargetW
 import { createConversationReferences } from "./conversation-references.js";
 import { runtimeSingleton } from "./runtime-singleton.js";
 
-export const inject = ["slots", "locale", "modules", "sessions", "workspaces", "inputTriggers", "conversation"] as const;
+// Keep the activation gate aligned with the current DSH web runtime. The
+// workspace face is accessed by followDshWorkspace, so it must be declared
+// here even though the face itself is read defensively across DSH versions.
+export const inject = ["slots", "locale", "modules", "sessions", "workspaces", "connection"] as const;
 
 type WorkbenchRuntime = {
   i18n: ReturnType<typeof createLocaleStore>;
@@ -23,8 +26,13 @@ type WorkbenchRuntime = {
 };
 
 const getWorkbenchRuntime = runtimeSingleton((): WorkbenchRuntime => {
-  const store = createFileStore();
   const i18n = createLocaleStore();
+  const store = createFileStore(undefined, () => window.confirm(i18n.t("closeUnsavedConfirm")));
+  window.addEventListener("beforeunload", (event) => {
+    if (!store.hasUnsavedChanges()) return;
+    event.preventDefault();
+    event.returnValue = "";
+  });
   const references = createConversationReferences();
   installFileOpenCapture((path, mode, line) => {
     if (mode === "diff") {

@@ -211,6 +211,7 @@ export function WorkbenchHeader({
                     copyLabel={t("copyPath")}
                     copiedLabel={t("pathCopied")}
                   />
+                  {store.editorSession(path).baseline !== null && store.editorSession(path).content !== store.editorSession(path).baseline ? <span className="dsh-wb-dirty-dot" aria-label={t("unsavedChanges")} /> : null}
                   <WorkbenchTooltip label={t("closeFile")}>
                   <button
                     className="dsh-wb-tab-close"
@@ -218,7 +219,7 @@ export function WorkbenchHeader({
                     aria-label={`${t("closeFile")}: ${path}`}
                     onClick={() => {
                       const isActive = !diffMode && !emptyTabOpen && !activeEmptyFileTab && path === state.active;
-                      store.close(path, hasTabsAfter("normal"));
+                      if (!store.close(path, hasTabsAfter("normal"))) return;
                       if (!isActive || normalFileTabs.length > 1) return;
                       if (reviewTabOpen) openReviewTab();
                       else if (emptyTabOpen) setEmptyTabOpen(true);

@@ -11,7 +11,7 @@ import {
 
 export type WorkbenchTabEffects = {
   activateFile?(path: string): void;
-  closeFile?(path: string, keepPanelOpen: boolean): void;
+  closeFile?(path: string, keepPanelOpen: boolean): boolean | void;
 };
 
 export function useWorkbenchTabs(effects: WorkbenchTabEffects = {}) {
@@ -55,7 +55,7 @@ export function useWorkbenchTabs(effects: WorkbenchTabEffects = {}) {
     const current = stateRef.current;
     const path = current.paths[id];
     const next = closeState(current, id);
-    if (path) effectsRef.current.closeFile?.(path, keepPanelOpen);
+    if (path && effectsRef.current.closeFile?.(path, keepPanelOpen) === false) return;
     updateState(() => next);
     const nextPath = next.activeId ? next.paths[next.activeId] : "";
     if (nextPath) effectsRef.current.activateFile?.(nextPath);

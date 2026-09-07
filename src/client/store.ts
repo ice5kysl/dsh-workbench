@@ -19,13 +19,27 @@ export type FileState = {
 
 export type FileLoader = (path: string, mode?: FileOpenMode) => Promise<FilePayload>;
 
+export type EditorSession = {
+  saving?: boolean;
+  baseline: string | null;
+  content: string;
+  memory: { state?: unknown; top?: number; left?: number };
+};
+
 export type FileStore = {
+  editorSession(path: string): EditorSession;
+  edit(path: string, baseline: string): void;
+  updateDraft(path: string, content: string): void;
+  discardDraft(path: string): void;
+  completeSave(session: EditorSession, savedContent: string): void;
+  hasUnsavedChanges(): boolean;
+  setWorkspace(root: string): void;
   getSnapshot(): FileState;
   subscribe(listener: () => void): () => void;
   open(path: string, mode?: FileOpenMode, line?: number, reveal?: boolean, kind?: TabOpenKind): Promise<void>;
   activate(path: string, mode?: FileOpenMode, line?: number): Promise<void>;
   pin(path: string): void;
-  close(path?: string, keepPanelOpen?: boolean): void;
+  close(path?: string, keepPanelOpen?: boolean): boolean;
   reload(): Promise<void>;
   show(): void;
   hide(): void;
@@ -107,7 +121,21 @@ function replaceKey(items: readonly string[], from: string, to: string): string[
   return result;
 }
 
-export function createFileStore(load: FileLoader = fetchWorkspaceFile): FileStore {
+export function createFileStore(load: FileLoader = fetchWorkspaceFile, confirmDiscard: () => boolean = () => false): FileStore {
+  let workspace = "";
+  const sessions = new Map<string, Map<string, EditorSession>>();
+  const currentSessions = () => {
+    let entries = sessions.get(workspace);
+    if (!entries) { entries = new Map(); sessions.set(workspace, entries); }
+    return entries;
+  };
+  const editorSession = (path: string): EditorSession => {
+    const key = normalizePath(path);
+    let session = currentSessions().get(key);
+    if (!session) { session = { baseline: null, content: "", memory: {} }; currentSessions().set(key, session); }
+    return session;
+  };
+  const isDirty = (session: EditorSession) => session.baseline !== null && session.content !== session.baseline;
   let state = empty;
   let requestId = 0;
   const modes = new Map<string, FileOpenMode>();
@@ -179,6 +207,37 @@ export function createFileStore(load: FileLoader = fetchWorkspaceFile): FileStor
   };
 
   return {
+    editorSession,
+    edit(path, baseline) {
+      const session = editorSession(path);
+      if (session.baseline === null) { session.baseline = baseline; session.content = baseline; session.memory = {}; }
+      set({ ...state, preview: state.preview === path ? "" : state.preview });
+    },
+    updateDraft(path, content) {
+      const session = editorSession(path);
+      if (session.baseline === null) return;
+      session.content = content;
+      set({ ...state, preview: state.preview === path ? "" : state.preview });
+    },
+    discardDraft(path) {
+      const session = editorSession(path);
+      session.baseline = null;
+      session.memory = {};
+      set({ ...state });
+    },
+    completeSave(session, savedContent) {
+      if (session.content === savedContent) { session.baseline = null; session.memory = {}; }
+      else session.baseline = savedContent;
+      set({ ...state });
+    },
+    hasUnsavedChanges: () => [...sessions.values()].some((entries) => [...entries.values()].some(isDirty)),
+    setWorkspace(root) {
+      if (root === workspace) return;
+      workspace = root;
+      requestId += 1;
+      modes.clear();
+      set({ ...empty, visible: state.visible, disk: state.disk });
+    },
     getSnapshot: () => state,
     subscribe(listener) {
       listeners.add(listener);
@@ -226,32 +285,39 @@ export function createFileStore(load: FileLoader = fetchWorkspaceFile): FileStor
     },
     close(path, keepPanelOpen = false) {
       if (path == null || path === "") {
+        if ([...currentSessions().values()].some((session) => session.saving)) return false;
+        if ([...currentSessions().values()].some(isDirty) && !confirmDiscard()) return false;
+        currentSessions().clear();
         requestId += 1;
         modes.clear();
         set({ ...empty, visible: state.visible, disk: state.disk });
-        return;
+        return true;
       }
       const key = normalizePath(path);
+      if (editorSession(key).saving) return false;
+      if (isDirty(editorSession(key)) && !confirmDiscard()) return false;
+      currentSessions().delete(key);
       modes.delete(key);
       const index = state.open.indexOf(key);
       const open = state.open.filter((item) => item !== key);
       if (open.length === 0) {
         requestId += 1;
         set({ ...empty, visible: keepPanelOpen && state.visible, disk: state.disk });
-        return;
+        return true;
       }
       const preview = state.preview === key ? "" : state.preview;
       if (state.active !== key) {
         const views = { ...state.views };
         delete views[key];
         set({ ...state, open, views, preview });
-        return;
+        return true;
       }
       const next = state.open[index - 1] ?? state.open[index + 1] ?? "";
       const views = { ...state.views };
       delete views[key];
       set(withActive(open, next, { loading: true, payload: null, error: "", line: null, reveal: state.reveal, disk: state.disk, views, preview }));
       void loadActive(next, modes.get(next) ?? "auto");
+      return true;
     },
     show() {
       if (!state.visible) set({ ...state, visible: true });

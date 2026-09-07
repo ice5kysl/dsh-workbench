@@ -161,3 +161,30 @@ test("searches file contents while skipping dependency directories", async () =>
     { path: "src/a.ts", line: 1, column: 6, text: "const needle = true;" },
   ]);
 });
+
+test.each([
+  "analysis.M", "model.R", "model.jl", "init.lua", "App.cs", "App.kt",
+  "build.kts", "App.scala", "App.swift", "main.dart", "App.vue", "App.svelte",
+  "data.xml", "schema.xsd", "style.xsl", "style.xslt", "types.pyi",
+])("reads, searches, and edits newly supported source file %s", async (path) => {
+  const workspace = createWorkspace({
+    root: "/repo",
+    fs: memoryFs({ [`/repo/${path}`]: { isFile: true, content: "original" } }),
+  });
+  expect(await workspace.read(path)).toMatchObject({ ok: true, content: "original" });
+  expect(await workspace.searchContent("original")).toMatchObject([{ path, line: 1 }]);
+  expect(await workspace.write(path, "updated", "original")).toMatchObject({ ok: true });
+  expect(await workspace.read(path)).toMatchObject({ ok: true, content: "updated" });
+});
+
+test.each(["data.mat", "script.mlx", "model.slx", "code.p", "app.class", "app.dll"])(
+  "keeps non-source formats out of code previews: %s", async (path) => {
+    const workspace = createWorkspace({
+      root: "/repo",
+      fs: memoryFs({ [`/repo/${path}`]: { isFile: true, content: "binary" } }),
+    });
+    expect(await workspace.read(path)).toMatchObject({ ok: false, error: "not_previewable" });
+    expect(await workspace.write(path, "text", "binary")).toMatchObject({ ok: false, error: "not_previewable" });
+    expect(await workspace.searchContent("binary")).toEqual([]);
+  },
+);

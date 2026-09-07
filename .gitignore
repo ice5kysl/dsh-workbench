@@ -6,3 +6,5 @@ src/client/styles.generated.ts
 *.tgz
 .DS_Store
 assets/dsh-workbench-demo-concept*.png
+test-results/
+playwright-report/

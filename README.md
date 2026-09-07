@@ -102,6 +102,7 @@ Inspect, navigate, and review what the agent touched. Diffs stay on captured DSH
 - Workspace file tree with breadcrumbs, keyboard navigation, and path insert
 - Syntax highlighting, folding, and live refresh when the workspace changes on disk
 - Image previews and rendered Markdown, including relative images
+- Source previews also support MATLAB (`.m`), R, Julia, Lua, C#, Kotlin, Scala, Swift, Dart, XML, and Python stubs (`.pyi`). Vue / Svelte use basic HTML highlighting. MATLAB uses Octave syntax highlighting; `.m` defaults to MATLAB, while `.mat` and `.mlx` are not supported.
 - Change review: session edits plus uncommitted, unstaged, and staged Git scopes, with shared `+/−` counts
 - Short operation summaries for each captured write
 - Incremental review updates that preserve the active tab and keep large review panels responsive

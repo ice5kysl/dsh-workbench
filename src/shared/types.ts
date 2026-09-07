@@ -1,3 +1,4 @@
+export const EDITOR_BUNDLE_API_PATH = "/api/dsh-workbench/editor.js";
 export const FILE_API_PATH = "/api/dsh-workbench/file";
 export const FILE_ASSET_API_PATH = "/api/dsh-workbench/asset";
 export const SYSTEM_OPEN_API_PATH = "/api/dsh-workbench/system-open";

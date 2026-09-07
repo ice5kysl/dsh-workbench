@@ -451,3 +451,69 @@ test("opening the same file by absolute path reuses the existing relative tab", 
   expect(state.open).toEqual(["src/a.ts"]);
   expect(state.active).toBe("src/a.ts");
 });
+
+function editableStore(confirm = () => false) {
+  return createFileStore(async (path) => ({ path, content: "original", before: null, source: "workspace", revision: 0, size: 8 }), confirm);
+}
+
+test("editing pins the preview and preserves draft, baseline, and editor memory across tabs", async () => {
+  const store = editableStore();
+  await store.open("a.m", "view", undefined, false, "preview");
+  store.edit("a.m", "original");
+  store.updateDraft("a.m", "draft");
+  const session = store.editorSession("a.m");
+  session.memory.top = 200;
+  await store.open("b.ts", "view", undefined, false, "preview");
+  expect(store.getSnapshot().open).toEqual(["a.m", "b.ts"]);
+  await store.activate("a.m");
+  expect(store.editorSession("a.m")).toBe(session);
+  expect(session).toMatchObject({ baseline: "original", content: "draft", memory: { top: 200 } });
+  await store.reload();
+  expect(session.baseline).toBe("original");
+});
+
+test("cancelled close keeps inactive dirty tabs and close-all is atomic", async () => {
+  let allow = false;
+  const store = editableStore(() => allow);
+  await store.open("a.m");
+  store.edit("a.m", "original");
+  store.updateDraft("a.m", "draft");
+  await store.open("b.ts");
+  expect(store.close("a.m")).toBe(false);
+  expect(store.close()).toBe(false);
+  expect(store.getSnapshot().open).toEqual(["a.m", "b.ts"]);
+  expect(store.hasUnsavedChanges()).toBe(true);
+  allow = true;
+  expect(store.close("a.m")).toBe(true);
+  expect(store.getSnapshot().open).toEqual(["b.ts"]);
+  expect(store.hasUnsavedChanges()).toBe(false);
+});
+
+test("drafts remain isolated and recoverable when workspaces change", async () => {
+  const store = editableStore();
+  store.setWorkspace("/one");
+  await store.open("a.m");
+  store.edit("a.m", "original");
+  store.updateDraft("a.m", "one draft");
+  store.setWorkspace("/two");
+  await store.open("a.m");
+  expect(store.editorSession("a.m").baseline).toBe(null);
+  expect(store.hasUnsavedChanges()).toBe(true);
+  store.setWorkspace("/one");
+  await store.open("a.m");
+  expect(store.editorSession("a.m").content).toBe("one draft");
+});
+
+test("save completion keeps edits made while saving and advances only their baseline", async () => {
+  const store = editableStore();
+  await store.open("a.m");
+  store.edit("a.m", "original");
+  store.updateDraft("a.m", "saved");
+  const session = store.editorSession("a.m");
+  store.updateDraft("a.m", "newer draft");
+  store.completeSave(session, "saved");
+  expect(session).toMatchObject({ baseline: "saved", content: "newer draft" });
+  expect(store.hasUnsavedChanges()).toBe(true);
+  store.completeSave(session, "newer draft");
+  expect(store.hasUnsavedChanges()).toBe(false);
+});

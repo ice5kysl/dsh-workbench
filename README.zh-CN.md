@@ -102,6 +102,7 @@ pnpm start -- /绝对路径/你的项目
 - 工作区文件树：面包屑、键盘导航，以及把路径插入输入框
 - 语法高亮、代码折叠，以及磁盘变更后的实时刷新
 - 图片预览和渲染后的 Markdown（支持相对图片）
+- 代码预览还支持 MATLAB（`.m`）、R、Julia、Lua、C#、Kotlin、Scala、Swift、Dart、XML 和 Python 类型存根（`.pyi`）。Vue / Svelte 使用基础 HTML 高亮；MATLAB 使用 Octave 语法高亮，`.m` 默认按 MATLAB 识别，不支持 `.mat` 和 `.mlx`。
 - 变更审阅：会话编辑、未提交、未暂存和已暂存 Git 范围，共用 `+/−` 数据
 - 每条捕获写入显示简单操作摘要
 - 审查增量更新：保持当前 Tab，大型审查面板仍能流畅响应

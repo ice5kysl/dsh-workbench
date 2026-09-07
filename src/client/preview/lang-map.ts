@@ -9,7 +9,9 @@ export type LanguageId =
   | "xml" | "markdown" | "yaml" | "ini" | "toml"
   | "bash" | "c" | "cpp" | "go" | "rust"
   | "java" | "python" | "ruby" | "php" | "sql"
-  | "diff" | "dockerfile" | "makefile";
+  | "diff" | "dockerfile" | "makefile"
+  | "matlab" | "r" | "julia" | "lua" | "csharp"
+  | "kotlin" | "scala" | "swift" | "dart";
 
 const EXT_TO_LANG: Record<string, LanguageId> = {
   ts: "typescript",
@@ -62,6 +64,25 @@ const EXT_TO_LANG: Record<string, LanguageId> = {
   sql: "sql",
   diff: "diff",
   patch: "diff",
+  // .m is ambiguous with Objective-C; this workbench defaults to MATLAB.
+  m: "matlab",
+  r: "r",
+  jl: "julia",
+  lua: "lua",
+  cs: "csharp",
+  kt: "kotlin",
+  kts: "kotlin",
+  scala: "scala",
+  swift: "swift",
+  dart: "dart",
+  // Component files use basic HTML highlighting, not framework-specific parsing.
+  vue: "html",
+  svelte: "html",
+  xml: "xml",
+  xsd: "xml",
+  xsl: "xml",
+  xslt: "xml",
+  pyi: "python",
 };
 
 /**

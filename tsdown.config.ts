@@ -9,7 +9,7 @@ const clientExternals = [
   "@deepseek-ai/dsh-client-ui-primitives",
 ];
 
-export default defineConfig({
+export default defineConfig([{
   entry: { client: "src/client/entry.ts" },
   format: "cjs",
   outDir: "lib",
@@ -29,4 +29,18 @@ export default defineConfig({
     footer: "return module.exports; } });",
     codeSplitting: false,
   },
-});
+}, {
+  entry: { "client-editor": "src/client/preview/editor-chunk.ts" },
+  format: "cjs",
+  outDir: "lib",
+  platform: "browser",
+  clean: false,
+  deps: { alwaysBundle: [/./] },
+  outputOptions: {
+    entryFileNames: "client-editor.js",
+    banner: "globalThis.__dshWorkbenchEditor = (() => {",
+    intro: "var module = { exports: {} }; var exports = module.exports;",
+    footer: "return module.exports; })();",
+    codeSplitting: false,
+  },
+}]);

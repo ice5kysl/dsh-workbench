@@ -1,6 +1,6 @@
 {
   "name": "dsh-workbench",
-  "version": "0.14.1",
+  "version": "0.15.0",
   "description": "A right-side file workspace for DeepSeek Harness Web.",
   "license": "MIT",
   "author": "lee259",
@@ -80,7 +80,8 @@
     "prepare": "pnpm run build",
     "test": "vitest run",
     "test:watch": "vitest",
-    "start": "node scripts/start.mjs"
+    "start": "node scripts/start.mjs",
+    "test:mount": "node scripts/test-mount.mjs"
   },
   "peerDependencies": {
     "@deepseek-ai/cordis": "*",
@@ -97,6 +98,7 @@
     "@deepseek-ai/dsh-session": "*"
   },
   "devDependencies": {
+    "@playwright/test": "1.62.1",
     "@types/node": "^22.0.0",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^18.3.0",

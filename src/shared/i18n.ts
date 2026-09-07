@@ -90,6 +90,9 @@ export type MessageKey =
   | "source"
   | "refreshFile"
   | "refreshUnsavedConfirm"
+  | "closeUnsavedConfirm"
+  | "editorLoadFailed"
+  | "retryEditor"
   | "unsavedChanges"
   | "savingFile"
   | "fileSaved"
@@ -201,6 +204,9 @@ const zh: Record<MessageKey, string> = {
   preview: "预览",
   source: "源码",
   refreshFile: "刷新文件",
+  closeUnsavedConfirm: "文件有未保存的更改。丢弃更改并关闭吗？",
+  editorLoadFailed: "编辑器加载失败",
+  retryEditor: "重试",
   refreshUnsavedConfirm: "文件有未保存的更改。仍要刷新吗？",
   unsavedChanges: "未保存的更改",
   savingFile: "正在保存…",
@@ -314,6 +320,9 @@ const en: Record<MessageKey, string> = {
   preview: "Preview",
   source: "Source",
   refreshFile: "Refresh file",
+  closeUnsavedConfirm: "Discard unsaved changes and close?",
+  editorLoadFailed: "Failed to load editor",
+  retryEditor: "Retry",
   refreshUnsavedConfirm: "This file has unsaved changes. Refresh anyway?",
   unsavedChanges: "Unsaved changes",
   savingFile: "Saving…",

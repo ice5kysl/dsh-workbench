@@ -1,3 +1,4 @@
+import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
 import { css } from "@codemirror/lang-css";
 import { html } from "@codemirror/lang-html";
 import { javascript } from "@codemirror/lang-javascript";
@@ -6,10 +7,15 @@ import { markdown } from "@codemirror/lang-markdown";
 import { python } from "@codemirror/lang-python";
 import { xml } from "@codemirror/lang-xml";
 import { StreamLanguage, defaultHighlightStyle, foldGutter, foldKeymap, syntaxHighlighting } from "@codemirror/language";
-import { c, cpp, java } from "@codemirror/legacy-modes/mode/clike";
+import { c, cpp, csharp, dart, java, kotlin, scala } from "@codemirror/legacy-modes/mode/clike";
 import { diff } from "@codemirror/legacy-modes/mode/diff";
 import { dockerFile } from "@codemirror/legacy-modes/mode/dockerfile";
 import { go } from "@codemirror/legacy-modes/mode/go";
+import { julia } from "@codemirror/legacy-modes/mode/julia";
+import { lua } from "@codemirror/legacy-modes/mode/lua";
+import { octave } from "@codemirror/legacy-modes/mode/octave";
+import { r } from "@codemirror/legacy-modes/mode/r";
+import { swift } from "@codemirror/legacy-modes/mode/swift";
 import { properties } from "@codemirror/legacy-modes/mode/properties";
 import { ruby } from "@codemirror/legacy-modes/mode/ruby";
 import { rust } from "@codemirror/legacy-modes/mode/rust";
@@ -19,7 +25,7 @@ import { toml } from "@codemirror/legacy-modes/mode/toml";
 import { yaml } from "@codemirror/legacy-modes/mode/yaml";
 import { MergeView, unifiedMergeView } from "@codemirror/merge";
 import { search, searchKeymap } from "@codemirror/search";
-import { EditorState, type Extension } from "@codemirror/state";
+import { EditorState, StateEffect, type Extension } from "@codemirror/state";
 import { EditorView, keymap, lineNumbers } from "@codemirror/view";
 
 export type CodeSelection = {
@@ -109,6 +115,24 @@ function languageExtension(language: string | null): Extension[] {
       return [StreamLanguage.define(cpp)];
     case "java":
       return [StreamLanguage.define(java)];
+    case "matlab":
+      return [StreamLanguage.define(octave)];
+    case "r":
+      return [StreamLanguage.define(r)];
+    case "julia":
+      return [StreamLanguage.define(julia)];
+    case "lua":
+      return [StreamLanguage.define(lua)];
+    case "csharp":
+      return [StreamLanguage.define(csharp)];
+    case "kotlin":
+      return [StreamLanguage.define(kotlin)];
+    case "scala":
+      return [StreamLanguage.define(scala)];
+    case "swift":
+      return [StreamLanguage.define(swift)];
+    case "dart":
+      return [StreamLanguage.define(dart)];
     case "go":
       return [StreamLanguage.define(go)];
     case "rust":
@@ -136,6 +160,7 @@ export function createEditorExtensions(options: {
   editable?: boolean;
 }): Extension[] {
   const extensions: Extension[] = [
+    history(),
     lineNumbers(),
     foldGutter(),
     search({ top: true }),
@@ -148,6 +173,8 @@ export function createEditorExtensions(options: {
           return true;
         },
       }] : []),
+      ...defaultKeymap,
+      ...historyKeymap,
       ...foldKeymap,
       ...searchKeymap,
     ]),
@@ -196,7 +223,7 @@ export function createEditorExtensions(options: {
   return extensions;
 }
 
-export function mountCodeEditor(parent: HTMLElement, doc: string, extensions: Extension[], options?: { language: string | null; original: string | null; diffView?: DiffViewMode }): { view: EditorView; destroy(): void } {
+export function mountCodeEditor(parent: HTMLElement, doc: string, extensions: Extension[], options?: { language: string | null; original: string | null; diffView?: DiffViewMode; memory?: { state?: unknown; top?: number; left?: number } }): { view: EditorView; destroy(): void } {
   if (options?.original != null && options.original !== "" && options.diffView === "split") {
     const merge = new MergeView({
       a: {
@@ -230,9 +257,22 @@ export function mountCodeEditor(parent: HTMLElement, doc: string, extensions: Ex
       },
     };
   }
-  const view = new EditorView({
-    parent,
-    state: EditorState.create({ doc, extensions }),
-  });
-  return { view, destroy: () => view.destroy() };
+  const memory = options?.memory;
+  const previous = memory?.state;
+  const state = previous instanceof EditorState && previous.doc.toString() === doc
+    ? previous.update({ effects: StateEffect.reconfigure.of(extensions) }).state
+    : EditorState.create({ doc, extensions });
+  const view = new EditorView({ parent, state });
+  if (memory) view.requestMeasure({ read: () => null, write() {
+    view.scrollDOM.scrollTop = memory.top ?? 0;
+    view.scrollDOM.scrollLeft = memory.left ?? 0;
+  } });
+  return { view, destroy() {
+    if (memory) {
+      memory.state = view.state;
+      memory.top = view.scrollDOM.scrollTop;
+      memory.left = view.scrollDOM.scrollLeft;
+    }
+    view.destroy();
+  } };
 }

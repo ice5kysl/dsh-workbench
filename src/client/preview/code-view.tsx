@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { createEditorExtensions, mountCodeEditor, type CodeSelection, type DiffViewMode } from "./code-mirror.js";
+import type { mountCodeEditor, CodeSelection, DiffViewMode } from "./code-mirror.js";
+import { loadEditor } from "./editor-loader.js";
 import { editorSpec } from "./editor-spec.js";
-import { createPreviewCommands, type PreviewCommands } from "./preview-nav.js";
+import type { PreviewCommands } from "./preview-nav.js";
 import type { FileState } from "../store.js";
 import { saveWorkspaceFile } from "../store.js";
 import { FILE_ASSET_API_PATH } from "../../shared/types.js";
@@ -34,11 +35,17 @@ export function CodeView({ state, commandsRef, sessionId, diffView }: {
   const [markdownSource, setMarkdownSource] = useState(false);
   const [outlineOpen, setOutlineOpen] = useState(false);
   const [selection, setSelection] = useState<CodeSelection | null>(null);
-  const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState("");
+  const session = store.editorSession(state.path);
+  const editing = state.payload?.source === "workspace" && session.baseline !== null;
+  const draft = session.content;
+  const activeSessionRef = useRef(session);
+  activeSessionRef.current = session;
+  const [editorLoading, setEditorLoading] = useState(false);
+  const [editorError, setEditorError] = useState(false);
+  const [editorAttempt, setEditorAttempt] = useState(0);
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [saveError, setSaveError] = useState("");
-  const path = state.payload?.path;
+  const path = state.path;
   const revision = state.payload?.revision;
   const content = state.payload?.content;
   const [seenPath, setSeenPath] = useState(path);
@@ -47,10 +54,9 @@ export function CodeView({ state, commandsRef, sessionId, diffView }: {
 
   if (path !== seenPath) {
     setSeenPath(path);
-    setMarkdownSource(false);
+    setMarkdownSource(session.baseline !== null);
     setOutlineOpen(false);
     setSelection(null);
-    setEditing(false);
     setSaveState("idle");
     setSaveError("");
   }
@@ -66,52 +72,57 @@ export function CodeView({ state, commandsRef, sessionId, diffView }: {
 
   const onSelectionChange = useCallback((next: CodeSelection | null) => setSelection(next), []);
   const onDocumentChange = useCallback((next: string) => {
-    setDraft(next);
+    store.updateDraft(state.path, next);
     setSaveState("idle");
     setSaveError("");
-  }, []);
+  }, [store, state.path]);
   const payload = state.payload;
   const kind = payload ? previewKind(payload.path) : "code";
   const isMarkdown = payload != null && kind === "markdown" && payload.source !== "dsh-write";
   const canEdit = payload != null && payload.source === "workspace" && kind !== "image";
-  const dirty = editing && payload != null && draft !== payload.content;
+  const dirty = editing && payload != null && draft !== session.baseline;
 
   const startEditing = () => {
     if (!payload) return;
-    setDraft(payload.content);
-    setEditing(true);
+    store.edit(payload.path, payload.content);
     setSaveState("idle");
     setSaveError("");
     if (isMarkdown) setMarkdownSource(true);
   };
   const cancelEditing = () => {
-    if (!payload) return;
-    setDraft(payload.content);
-    setEditing(false);
+    if (!payload || session.saving) return;
+    store.discardDraft(payload.path);
     setSaveState("idle");
     setSaveError("");
     if (isMarkdown) setMarkdownSource(false);
   };
   const save = async () => {
-    if (!payload || !canSaveWorkspacePreview(payload.source, kind, editing) || saveState === "saving") return;
+    if (!payload || !canSaveWorkspacePreview(payload.source, kind, editing) || session.saving) return;
+    const baseline = session.baseline;
+    if (baseline === null) return;
+    const savedContent = draft;
+    session.saving = true;
     setSaveState("saving");
     try {
-      await saveWorkspaceFile(payload.path, draft, payload.content);
-      setEditing(false);
+      await saveWorkspaceFile(payload.path, savedContent, baseline);
+      store.completeSave(session, savedContent);
+      window.dispatchEvent(new Event("dsh-wb-workspace-change"));
+      if (activeSessionRef.current !== session) return;
       setSaveState("saved");
       setSaveError("");
       if (isMarkdown) setMarkdownSource(false);
-      window.dispatchEvent(new Event("dsh-wb-workspace-change"));
       await store.reload();
     } catch (error) {
+      if (activeSessionRef.current !== session) return;
       setSaveState("failed");
       setSaveError(error instanceof Error ? error.message : "read_failed");
-    }
+    } finally { session.saving = false; }
   };
   saveRef.current = () => { void save(); };
   const refresh = () => {
+    if (session.saving) return;
     if (!shouldRefreshPreview(dirty, !dirty || window.confirm(t("refreshUnsavedConfirm")))) return;
-    setEditing(false);
+    if (payload) store.discardDraft(payload.path);
     setSaveState("idle");
     setSaveError("");
     if (isMarkdown) setMarkdownSource(false);
@@ -120,31 +131,39 @@ export function CodeView({ state, commandsRef, sessionId, diffView }: {
   useEffect(() => {
     const host = hostRef.current;
     if (!host || !payload || state.loading || state.error) return undefined;
-    const spec = editorSpec(payload);
-    const resolvedDiffView = spec.original !== null && (spec.original === "" || payload.content === "") ? "unified" : diffView;
-    const editor = mountCodeEditor(host, editing ? draft : payload.content, createEditorExtensions({
-      language: spec.language,
-      original: spec.original,
-      diffView: resolvedDiffView,
-      onSelectionChange,
-      onDocumentChange,
-      onSave: editing && canEdit ? () => saveRef.current() : undefined,
-      editable: editing,
-    }), { language: spec.language, original: spec.original, diffView: resolvedDiffView });
-    editorRef.current = editor;
-    if (commandsRef) commandsRef.current = createPreviewCommands(editor.view, editing && canEdit ? () => saveRef.current() : undefined);
-    if (state.line) createPreviewCommands(editor.view).revealLine(state.line);
+    let cancelled = false;
+    let mounted: ReturnType<typeof mountCodeEditor> | undefined;
+    setEditorLoading(true);
+    setEditorError(false);
+    void loadEditor().then((api) => {
+      if (cancelled) return;
+      const spec = editorSpec(payload);
+      const resolvedDiffView = spec.original !== null && (spec.original === "" || payload.content === "") ? "unified" : diffView;
+      const editor = api.mountCodeEditor(host, editing ? session.content : payload.content, api.createEditorExtensions({
+        language: spec.language,
+        original: spec.original,
+        diffView: resolvedDiffView,
+        onSelectionChange,
+        onDocumentChange,
+        onSave: editing && canEdit ? () => saveRef.current() : undefined,
+        editable: editing,
+      }), { language: spec.language, original: spec.original, diffView: resolvedDiffView, memory: spec.original === null ? session.memory : undefined });
+      mounted = editor;
+      editorRef.current = editor;
+      const commands = api.createPreviewCommands(editor.view, editing && canEdit ? () => saveRef.current() : undefined);
+      if (commandsRef) commandsRef.current = commands;
+      if (state.line) commands.revealLine(state.line);
+      setEditorLoading(false);
+    }).catch(() => {
+      if (!cancelled) { setEditorLoading(false); setEditorError(true); }
+    });
     return () => {
-      editor.destroy();
+      cancelled = true;
+      mounted?.destroy();
       editorRef.current = null;
       if (commandsRef) commandsRef.current = null;
     };
-  }, [payload, state.loading, state.error, markdownSource, editing, diffView, onSelectionChange, onDocumentChange, canEdit, commandsRef, state.line]);
-
-  useEffect(() => {
-    if (!state.line || !editorRef.current) return;
-    createPreviewCommands(editorRef.current.view).revealLine(state.line);
-  }, [state.line, payload]);
+  }, [payload, state.loading, state.error, markdownSource, editing, diffView, onSelectionChange, onDocumentChange, canEdit, commandsRef, state.line, session, editorAttempt]);
 
   useEffect(() => {
     if (!outlineOpen) return undefined;
@@ -170,8 +189,8 @@ export function CodeView({ state, commandsRef, sessionId, diffView }: {
       <div className="dsh-wb-preview-actions">
         {editing ? <>
           {dirty ? <span className="dsh-wb-dirty-dot" title={t("unsavedChanges")} aria-label={t("unsavedChanges")} /> : null}
-          <button className="dsh-wb-preview-text-action" type="button" onClick={cancelEditing}>{t("cancelEdit")}</button>
-          <button className="dsh-wb-preview-text-action is-primary" type="button" disabled={saveState === "saving"} onClick={() => void save()}>{t("saveFile")}</button>
+          <button className="dsh-wb-preview-text-action" type="button" disabled={session.saving} onClick={cancelEditing}>{t("cancelEdit")}</button>
+          <button className="dsh-wb-preview-text-action is-primary" type="button" disabled={session.saving} onClick={() => void save()}>{t("saveFile")}</button>
         </> : canEdit ? <WorkbenchTooltip label={t("editFile")}><button className="dsh-wb-button dsh-wb-icon-button dsh-wb-preview-icon" type="button" aria-label={t("editFile")} onClick={startEditing}><Icon name="edit" /></button></WorkbenchTooltip> : null}
         {canEdit ? <WorkbenchTooltip label={t("refreshFile")}><button className="dsh-wb-button dsh-wb-icon-button dsh-wb-preview-icon" type="button" aria-label={t("refreshFile")} onClick={refresh}><Icon name="refresh" /></button></WorkbenchTooltip> : null}
         {saveState === "saving" ? <span className="dsh-wb-preview-status">{t("savingFile")}</span> : null}
@@ -210,6 +229,8 @@ export function CodeView({ state, commandsRef, sessionId, diffView }: {
   const reviewNoteReference = !editing && selection && payload.source === "dsh-write" ? buildReviewNoteReference(payload.path, payload.content, selection.from, selection.to) : null;
   return <div className="dsh-wb-preview-shell">
     {toolbar}
+    {editorLoading ? <div className="dsh-wb-empty">{t("loadingTitle")}</div> : null}
+    {editorError ? <div className="dsh-wb-error">{t("editorLoadFailed")} <button type="button" onClick={() => setEditorAttempt((value) => value + 1)}>{t("retryEditor")}</button></div> : null}
     <div className="dsh-wb-cm" ref={hostRef} />
     {saveError ? <div className="dsh-wb-error">{t(saveError)}</div> : null}
     {selection && selectionReference && references ? createPortal(

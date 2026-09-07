@@ -15,6 +15,6 @@ export type WorkbenchClientContext = WorkbenchSlotContext & DshWorkspaceFaces & 
 };
 
 export type WorkbenchPlugin = {
-  inject: ["slots", "locale", "modules", "sessions", "workspaces", "inputTriggers", "conversation"];
+  inject: ["slots", "locale", "modules", "sessions", "workspaces", "connection"];
   apply(ctx: WorkbenchClientContext): void;
 };

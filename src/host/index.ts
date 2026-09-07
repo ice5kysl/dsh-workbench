@@ -4,7 +4,7 @@ import { resolve } from "node:path";
 import { toFilePayload } from "./file-preview.js";
 import { sendJson } from "./http.js";
 import { createPathIdentity } from "./path-identity.js";
-import { ACTIVITY_API_PATH, CONTENT_SEARCH_API_PATH, EVENTS_API_PATH, FILES_API_PATH, FILE_API_PATH, FILE_ASSET_API_PATH, GIT_DIFF_API_PATH, GIT_STATUS_API_PATH, MAX_IMAGE_PREVIEW_BYTES, normalizePath, REVIEW_API_PATH, SYSTEM_OPEN_API_PATH, WORKSPACE_API_PATH, type FileOpenMode, type GitFileDiff } from "../shared/types.js";
+import { EDITOR_BUNDLE_API_PATH, ACTIVITY_API_PATH, CONTENT_SEARCH_API_PATH, EVENTS_API_PATH, FILES_API_PATH, FILE_API_PATH, FILE_ASSET_API_PATH, GIT_DIFF_API_PATH, GIT_STATUS_API_PATH, MAX_IMAGE_PREVIEW_BYTES, normalizePath, REVIEW_API_PATH, SYSTEM_OPEN_API_PATH, WORKSPACE_API_PATH, type FileOpenMode, type GitFileDiff } from "../shared/types.js";
 import { completeSessionDiffs, reviewDiffCounts } from "../shared/review-diff.js";
 import { countDiffLines } from "../shared/line-diff.js";
 import { isTextPreviewPath } from "../shared/preview-policy.js";
@@ -63,6 +63,20 @@ async function readJson(req: IncomingMessage): Promise<unknown> {
 }
 
 export function apply(ctx: HostContext): void {
+  ctx.webServer.register({
+    kind: "exact",
+    path: EDITOR_BUNDLE_API_PATH,
+    handler: async (_req, res) => {
+      try {
+        const content = await readFile(new URL("../client-editor.js", import.meta.url));
+        res.statusCode = 200;
+        res.setHeader("content-type", "text/javascript; charset=utf-8");
+        res.setHeader("cache-control", "no-cache");
+        res.setHeader("x-content-type-options", "nosniff");
+        res.end(content);
+      } catch { sendJson(res, 404, { error: "editor_bundle_missing" }); }
+    },
+  });
   let root = resolve(process.cwd());
   let paths = createPathIdentity(root);
   let workspace: Workspace = createWorkspace({ root, paths });

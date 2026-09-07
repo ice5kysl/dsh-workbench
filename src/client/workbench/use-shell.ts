@@ -91,6 +91,15 @@ export function useWorkbenchShell() {
     }, []);
 
     const openTreeFile = useCallback((path: string, mode: FileOpenMode, line: number | undefined, kind: TabOpenKind) => {
+      const previous = emptyFilePaths[activeEmptyFileTab];
+      if (previous && previous !== path) {
+        const draft = store.editorSession(previous);
+        if (draft.baseline !== null && draft.content !== draft.baseline) {
+          setActiveEmptyFileTab("");
+          void store.open(path, mode, line, false, kind);
+          return;
+        }
+      }
       const replacement = replaceActiveEmptyFilePath(path);
       if (!replacement) {
         setActiveEmptyFileTab("");
@@ -99,10 +108,9 @@ export function useWorkbenchShell() {
       }
       if (replacement.previousPath && replacement.previousPath !== path && !replacement.shared) store.close(replacement.previousPath, true);
       void store.open(path, mode, line, false, "keep");
-    }, [replaceActiveEmptyFilePath, setActiveEmptyFileTab, store]);
+    }, [replaceActiveEmptyFilePath, setActiveEmptyFileTab, store, emptyFilePaths, activeEmptyFileTab]);
 
     const resetChrome = useCallback(() => {
-      store.close();
       setDiffMode(false);
       setDiffView("unified");
       setReviewTabOpen(false);
@@ -118,6 +126,7 @@ export function useWorkbenchShell() {
 
     const applyIdentity = useCallback((root: string, sessionId: string) => {
       const nextRoot = root || rootRef.current;
+      store.setWorkspace(nextRoot);
       if (workbenchShouldReset(rootRef.current, nextRoot, sessionRef.current, sessionId)) resetChrome();
       if (nextRoot && nextRoot !== rootRef.current) {
         rootRef.current = nextRoot;
